@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // vm.c -- virtual machine
 
+#include <debug.h>
+
 /*
 
 
@@ -573,6 +575,7 @@ it will attempt to load as a system dll
 */
 vm_t *VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *), 
 				vmInterpret_t interpret ) {
+					TR
 	vm_t		*vm;
 	vmHeader_t	*header;
 	int			i, remaining, retval;

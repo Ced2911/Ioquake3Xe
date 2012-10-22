@@ -21,7 +21,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include <sys/types.h> /* needed by sys/mman.h on OSX */
+#ifndef XENON
 #include <sys/mman.h>
+#else
+#include <ppc/cache.h>
+#include <malloc.h>
+void * mmap(void *start, size_t length, int prot , int flags, int fd, off_t offset)
+{
+	
+}
+int munmap(void *start, size_t length) 
+{
+	
+}
+
+int mprotect(const void *addr, size_t *len, int prot) {
+	memicbi(addr,len);
+}
+#endif
 #include <sys/time.h>
 #include <time.h>
 #include <stddef.h>

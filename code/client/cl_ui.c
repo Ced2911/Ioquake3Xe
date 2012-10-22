@@ -19,7 +19,7 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-
+#include <debug.h>
 #include "client.h"
 
 #include "../botlib/botlib.h"
@@ -765,6 +765,7 @@ intptr_t CL_UISystemCalls( intptr_t *args ) {
 		return 0;
 
 	case UI_CMD_EXECUTETEXT:
+	TR
 		if(args[1] == EXEC_NOW
 		&& (!strncmp(VMA(2), "snd_restart", 11)
 		|| !strncmp(VMA(2), "vid_restart", 11)
@@ -1097,6 +1098,8 @@ void CL_InitUI( void ) {
 	int		v;
 	vmInterpret_t		interpret;
 
+TR
+
 	// load the dll or bytecode
 	interpret = Cvar_VariableValue("vm_ui");
 	if(cl_connectedToPureServer)
@@ -1114,6 +1117,7 @@ void CL_InitUI( void ) {
 	// sanity check
 	v = VM_Call( uivm, UI_GETAPIVERSION );
 	if (v == UI_OLD_API_VERSION) {
+		TR
 //		Com_Printf(S_COLOR_YELLOW "WARNING: loading old Quake III Arena User Interface version %d\n", v );
 		// init for this gamestate
 		VM_Call( uivm, UI_INIT, (clc.state >= CA_AUTHORIZING && clc.state < CA_ACTIVE));
@@ -1127,6 +1131,7 @@ void CL_InitUI( void ) {
 		cls.uiStarted = qfalse;
 	}
 	else {
+		TR
 		// init for this gamestate
 		VM_Call( uivm, UI_INIT, (clc.state >= CA_AUTHORIZING && clc.state < CA_ACTIVE) );
 	}

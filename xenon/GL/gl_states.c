@@ -502,7 +502,8 @@ void XeUpdateStates() {
 		
 		// Culling
 		Xe_SetCullMode(xe, xe_state.cull_mode);
-		
+
+#if 0
 		// Stencil
 		Xe_SetStencilEnable(xe, xe_state.stencil_enable);
 		Xe_SetStencilFunc(xe, xe_state.stencil_func_b, xe_state.stencil_func);
@@ -513,7 +514,7 @@ void XeUpdateStates() {
 		Xe_SetStencilRef(xe, xe_state.stencil_ref_b, xe_state.stencil_ref);
 		Xe_SetStencilMask(xe, xe_state.stencil_mask_b, xe_state.stencil_mask);
 		Xe_SetStencilWriteMask(xe, xe_state.stencil_write_b, xe_state.stencil_write);
-		
+#endif
 		// other		
 		//Xe_SetFillMode(xe, xe_state.fill_mode_front, xe_state.fill_mode_back);
 		//Xe_SetFillMode(xe, XE_FILL_SOLID, XE_FILL_SOLID);

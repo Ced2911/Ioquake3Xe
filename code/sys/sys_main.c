@@ -623,7 +623,7 @@ int main( )
 	char * newargv[] = {
 		"uda:/q3.elf",
 		//"+set", "game", "baseq2", "+set", "cddir", "uda:/baseq2/"
-		"+set", "fs_basepath" , "uda:/",
+		//"+set", "fs_basepath" , "uda:/",
 		//"+set", "cddir", "uda:/baseq2/",
 		//"+set", "cl_maxfps", "400"
 	};

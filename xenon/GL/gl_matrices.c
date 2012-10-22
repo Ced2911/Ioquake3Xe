@@ -233,7 +233,7 @@ void glDepthRange (GLclampd zNear, GLclampd zFar)
 	znear = zFar;
 	zfar = zNear;
 	
-	printf("glDepthRange : %f - %f\n", zNear, zFar);
+	//printf("glDepthRange : %f - %f\n", zNear, zFar);
 	//xe_gl_log("glDepthRange Not implemented\n");
 	//Xe_SetViewport(xe, 0, 0, vp_w, vp_h, znear, zfar);
 }
@@ -241,7 +241,7 @@ void glDepthRange (GLclampd zNear, GLclampd zFar)
 void glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	//xe_gl_log("glViewport Not implemented\n");
-	printf("glViewport : %d - %d - %d - %d\n", x, y, width, height );
+	//printf("glViewport : %d - %d - %d - %d\n", x, y, width, height );
 	vp_w = width;
 	vp_h = height;
 	//Xe_SetViewport(xe, 0, 0, vp_w, vp_h, znear, zfar);

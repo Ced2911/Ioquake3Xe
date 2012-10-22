@@ -825,6 +825,7 @@ ifeq ($(PLATFORM),XENON)
 
 	BASE_CFLAGS += -I$(MOUNT_DIR)/xenon
 	LIBS= -lm -lxenon  gl.a -lxenon -lfat
+	 
 else # ifeq xenon
 
 #############################################################################
@@ -900,7 +901,7 @@ ifneq ($(BUILD_GAME_SO),0)
 endif
 
 ifneq ($(BUILD_GAME_QVM),0)
-  ifneq ($(CROSS_COMPILING),1)
+#  ifneq ($(CROSS_COMPILING),1)
     ifneq ($(BUILD_BASEGAME),0)
       TARGETS += \
       $(B)/$(BASEGAME)/vm/cgame.qvm \
@@ -913,7 +914,7 @@ ifneq ($(BUILD_GAME_QVM),0)
       $(B)/$(MISSIONPACK)/vm/cgame.qvm \
       $(B)/$(MISSIONPACK)/vm/ui.qvm
     endif
-  endif
+#  endif
 endif
 
 ifeq ($(USE_OPENAL),1)

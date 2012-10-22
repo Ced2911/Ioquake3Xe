@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cl_cgame.c  -- client system interaction with client game
 
 #include "client.h"
-
+#include <debug.h>
 #include "../botlib/botlib.h"
 
 #ifdef USE_MUMBLE
@@ -724,6 +724,8 @@ void CL_InitCGame( void ) {
 	vmInterpret_t		interpret;
 
 	t1 = Sys_Milliseconds();
+	
+	TR
 
 	// put away the console
 	Con_Close();

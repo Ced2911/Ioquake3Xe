@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 qboolean SNDDMA_Init(void)
 {
-	return qfalse;
+	return qtrue;
 }
 
 int	SNDDMA_GetDMAPos(void)

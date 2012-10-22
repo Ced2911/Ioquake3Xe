@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // cl_main.c  -- client main loop
-
+#include <debug.h>
 #include "client.h"
 #include <limits.h>
 
@@ -1888,6 +1888,7 @@ doesn't know what graphics to reload
 =================
 */
 void CL_Vid_Restart_f( void ) {
+	TR
 
 	// Settings may have changed so stop recording now
 	if( CL_VideoRecording( ) ) {
@@ -1975,6 +1976,7 @@ handles will be invalid
 */
 void CL_Snd_Restart_f(void)
 {
+	TR
 	CL_Snd_Shutdown();
 	// sound will be reinitialized by vid_restart
 	CL_Vid_Restart_f();
@@ -2047,7 +2049,7 @@ Called when all downloading has been completed
 =================
 */
 void CL_DownloadsComplete( void ) {
-
+	TR
 #ifdef USE_CURL
 	// if we downloaded with cURL
 	if(clc.cURLUsed) { 
@@ -3428,6 +3430,8 @@ CL_Init
 ====================
 */
 void CL_Init( void ) {
+	TR
+	
 	Com_Printf( "----- Client Initialization -----\n" );
 
 	Con_Init ();
@@ -4576,6 +4580,9 @@ CL_CDKeyValidate
 =================
 */
 qboolean CL_CDKeyValidate( const char *key, const char *checksum ) {
+#ifdef XENON
+	return qtrue;
+#else
 #ifdef STANDALONE
 	return qtrue;
 #else
@@ -4635,5 +4642,6 @@ qboolean CL_CDKeyValidate( const char *key, const char *checksum ) {
 	}
 
 	return qfalse;
+#endif
 #endif
 }

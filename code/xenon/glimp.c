@@ -94,7 +94,6 @@ qboolean QGL_Init( const char *dllname ) {
 void		QGL_Shutdown( void ) {
 }
 
-
 // No SMP - stubs
 void GLimp_RenderThreadWrapper( void *arg )
 {
