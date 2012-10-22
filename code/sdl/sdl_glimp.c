@@ -19,7 +19,7 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-
+#ifndef XENON
 #ifdef USE_LOCAL_HEADERS
 #	include "SDL.h"
 #else
@@ -1068,4 +1068,5 @@ void GLimp_WakeRenderer( void *data )
 {
 }
 
+#endif
 #endif

@@ -23,6 +23,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef __Q_PLATFORM_H
 #define __Q_PLATFORM_H
 
+#ifdef XENON
+#undef __linux__
+#endif
+
 // this is for determining if we have an asm version of a C function
 #define idx64 0
 
@@ -314,6 +318,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #endif
 
+#ifdef XENON
+
+#define OS_STRING "xenon"
+#define ID_INLINE __inline
+#define PATH_SEP '/'
+
+#define ARCH_STRING "ppc"
+
+#define Q3_BIG_ENDIAN
+
+#define DLL_EXT ".xx"
+
+#endif
+
 //================================================================== Q3VM ===
 
 #ifdef Q3_VM
@@ -321,11 +339,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define OS_STRING "q3vm"
 #define ID_INLINE
 #define PATH_SEP '/'
-
 #define ARCH_STRING "bytecode"
-
 #define DLL_EXT ".qvm"
-
+#define idppc 1
+#define idppc_altivec 0
 #endif
 
 //===========================================================================

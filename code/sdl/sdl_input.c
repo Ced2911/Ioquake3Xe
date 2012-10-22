@@ -20,6 +20,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#ifndef XENON
+
 #ifdef USE_LOCAL_HEADERS
 #	include "SDL.h"
 #else
@@ -1088,3 +1090,6 @@ void IN_Restart( void )
 	IN_ShutdownJoystick( );
 	IN_Init( );
 }
+
+
+#endif

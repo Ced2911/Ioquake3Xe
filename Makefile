@@ -229,6 +229,7 @@ Q3UIDIR=$(MOUNT_DIR)/q3_ui
 JPDIR=$(MOUNT_DIR)/jpeg-8c
 SPEEXDIR=$(MOUNT_DIR)/libspeex
 ZDIR=$(MOUNT_DIR)/zlib
+XENONDIR=$(MOUNT_DIR)/xenon
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
 LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
 Q3CPPDIR=$(MOUNT_DIR)/tools/lcc/cpp
@@ -818,6 +819,15 @@ ifeq ($(PLATFORM),sunos)
 else # ifeq sunos
 
 #############################################################################
+# SETUP AND BUILD -- Xenon
+#############################################################################
+ifeq ($(PLATFORM),XENON)
+
+	BASE_CFLAGS += -I$(MOUNT_DIR)/xenon
+	LIBS= -lm -lxenon  gl.a -lxenon -lfat
+else # ifeq xenon
+
+#############################################################################
 # SETUP AND BUILD -- GENERIC
 #############################################################################
   BASE_CFLAGS=
@@ -835,6 +845,7 @@ endif #OpenBSD
 endif #NetBSD
 endif #IRIX
 endif #SunOS
+endif #Xenon
 
 ifneq ($(HAVE_VM_COMPILED),true)
   BASE_CFLAGS += -DNO_VM_COMPILED
@@ -1172,6 +1183,7 @@ makedirs:
 	@if [ ! -d $(BUILD_DIR) ];then $(MKDIR) $(BUILD_DIR);fi
 	@if [ ! -d $(B) ];then $(MKDIR) $(B);fi
 	@if [ ! -d $(B)/client ];then $(MKDIR) $(B)/client;fi
+	@if [ ! -d $(B)/xenon ];then $(MKDIR) $(B)/xenon;fi
 	@if [ ! -d $(B)/renderer ];then $(MKDIR) $(B)/renderer;fi
 	@if [ ! -d $(B)/renderersmp ];then $(MKDIR) $(B)/renderersmp;fi
 	@if [ ! -d $(B)/ded ];then $(MKDIR) $(B)/ded;fi
@@ -1703,6 +1715,15 @@ ifeq ($(HAVE_VM_COMPILED),true)
   ifeq ($(ARCH),sparc)
     Q3OBJ += $(B)/client/vm_sparc.o
   endif
+endif
+
+ifeq ($(PLATFORM),XENON)
+  Q3OBJ += \
+    $(B)/xenon/net.o \
+    $(B)/xenon/sys.o \
+    $(B)/xenon/input.o \
+    $(B)/xenon/snddma.o \
+    $(B)/xenon/glimp.o
 endif
 
 ifeq ($(PLATFORM),mingw32)
@@ -2414,7 +2435,13 @@ $(B)/$(MISSIONPACK)/qcommon/%.o: $(CMDIR)/%.c
 
 $(B)/$(MISSIONPACK)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
 	$(DO_Q3LCC_MISSIONPACK)
+	
+#############################################################################
+# XENON
+#############################################################################
 
+$(B)/xenon/%.o: $(XENONDIR)/%.c
+	$(DO_CC)
 
 #############################################################################
 # MISC
@@ -2533,6 +2560,12 @@ dist:
 	svn export . $(CLIENTBIN)-$(VERSION)
 	tar --owner=root --group=root --force-local -cjf $(CLIENTBIN)-$(VERSION).tar.bz2 $(CLIENTBIN)-$(VERSION)
 	rm -rf $(CLIENTBIN)-$(VERSION)
+
+run: release
+	@echo converting and stripping ... $(notdir $@)
+	xenon-objcopy -O elf32-powerpc --adjust-vma 0x80000000 build/release-XENON-ppc/ioquake3.ppc quake3.elf32
+	xenon-strip quake3.elf32
+	cp quake3.elf32 /srv/tftp/tftpboot/xenon
 
 #############################################################################
 # DEPENDENCIES

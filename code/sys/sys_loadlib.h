@@ -35,17 +35,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #		define Sys_LibraryError() dlerror()
 #	endif
 #else
-#	ifdef USE_LOCAL_HEADERS
-#		include "SDL.h"
-#		include "SDL_loadso.h"
+#	ifdef XENON
+#		include "xenon_sys.h"
+#		define Sys_LoadLibrary(f) Xenon_LoadLibrary(f)
+#		define Sys_UnloadLibrary(h) Xenon_UnloadLibrary(h)
+#		define Sys_LoadFunction(h,fn) Xenon_LoadFunction(h,fn)
+#		define Sys_LibraryError() Xenon_LibraryError()
 #	else
-#		include <SDL.h>
-#		include <SDL_loadso.h>
+#		ifdef USE_LOCAL_HEADERS
+#			include "SDL.h"
+#			include "SDL_loadso.h"
+#		else
+#			include <SDL.h>
+#			include <SDL_loadso.h>
+#		endif
+#		define Sys_LoadLibrary(f) SDL_LoadObject(f)
+#		define Sys_UnloadLibrary(h) SDL_UnloadObject(h)
+#		define Sys_LoadFunction(h,fn) SDL_LoadFunction(h,fn)
+#		define Sys_LibraryError() SDL_GetError()
 #	endif
-#	define Sys_LoadLibrary(f) SDL_LoadObject(f)
-#	define Sys_UnloadLibrary(h) SDL_UnloadObject(h)
-#	define Sys_LoadFunction(h,fn) SDL_LoadFunction(h,fn)
-#	define Sys_LibraryError() SDL_GetError()
 #endif
 
 void * QDECL Sys_LoadDll(const char *name, qboolean useSystemLib);

@@ -20,6 +20,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#ifndef XENON
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -296,3 +298,4 @@ void SNDDMA_BeginPainting (void)
 {
 	SDL_LockAudio();
 }
+#endif

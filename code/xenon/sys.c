@@ -19,11 +19,13 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-#ifndef XENON
+
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "../sys/sys_local.h"
 
+#include <ppc/timebase.h>
+#include <time/time.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,15 +33,64 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdio.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <sys/time.h>
 #include <pwd.h>
-#include <libgen.h>
 #include <fcntl.h>
-#include <fenv.h>
 #include <sys/wait.h>
+#include <debug.h>
+
+#include <libfat/fat.h>
+#include <console/console.h>
+#include <diskio/ata.h>
+#include <usb/usbmain.h>
+#include <xenos/xenos.h>
+#include <xenon_soc/xenon_power.h>
 
 qboolean stdinIsATTY;
+
+char * dirname(const char *path)
+{
+	static char dname[MAXPATHLEN];
+	size_t len;
+	const char *endp;
+
+	/* Empty or NULL string gets treated as "." */
+	if (path == NULL || *path == '\0') {
+		dname[0] = '.';
+		dname[1] = '\0';
+		return (dname);
+	}
+
+	/* Strip any trailing slashes */
+	endp = path + strlen(path) - 1;
+	while (endp > path && *endp == '/')
+		endp--;
+
+	/* Find the start of the dir */
+	while (endp > path && *endp != '/')
+		endp--;
+
+	/* Either the dir is "/" or there are no slashes */
+	if (endp == path) {
+		dname[0] = *endp == '/' ? '/' : '.';
+		dname[1] = '\0';
+		return (dname);
+	} else {
+		/* Move forward past the separating slashes */
+		do {
+			endp--;
+		} while (endp > path && *endp == '/');
+	}
+
+	len = endp - path + 1;
+	if (len >= sizeof(dname)) {
+		errno = ENAMETOOLONG;
+		return (NULL);
+	}
+	memcpy(dname, path, len);
+	dname[len] = '\0';
+	return (dname);
+}
 
 // Used to determine where to store user-specific files
 static char homePath[ MAX_OSPATH ] = { 0 };
@@ -58,20 +109,10 @@ char *Sys_DefaultHomePath(void)
 		if( ( p = getenv( "HOME" ) ) != NULL )
 		{
 			Com_sprintf(homePath, sizeof(homePath), "%s%c", p, PATH_SEP);
-#ifdef MACOS_X
-			Q_strcat(homePath, sizeof(homePath),
-				"Library/Application Support/");
-
-			if(com_homepath->string[0])
-				Q_strcat(homePath, sizeof(homePath), com_homepath->string);
-			else
-				Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_MACOSX);
-#else
 			if(com_homepath->string[0])
 				Q_strcat(homePath, sizeof(homePath), com_homepath->string);
 			else
 				Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_UNIX);
-#endif
 		}
 	}
 
@@ -117,19 +158,10 @@ Sys_RandomBytes
 */
 qboolean Sys_RandomBytes( byte *string, int len )
 {
-	FILE *fp;
-
-	fp = fopen( "/dev/urandom", "r" );
-	if( !fp )
-		return qfalse;
-
-	if( !fread( string, sizeof( byte ), len, fp ) )
-	{
-		fclose( fp );
-		return qfalse;
+	int i =0;
+	for(i = 0; i <len; i++) {
+		string[i] = rand() % 255;
 	}
-
-	fclose( fp );
 	return qtrue;
 }
 
@@ -140,12 +172,7 @@ Sys_GetCurrentUser
 */
 char *Sys_GetCurrentUser( void )
 {
-	struct passwd *p;
-
-	if ( (p = getpwuid( getuid() )) == NULL ) {
-		return "player";
-	}
-	return p->pw_name;
+	return "player";
 }
 
 /*
@@ -159,6 +186,14 @@ char *Sys_GetClipboardData(void)
 }
 
 #define MEM_THRESHOLD 96*1024*1024
+
+const char *basename(const char *path)
+{
+    char *s;
+    s = strrchr(path, '/');
+    return s ? s + 1 : path;
+}
+
 
 /*
 ==================
@@ -214,27 +249,7 @@ Sys_Mkfifo
 */
 FILE *Sys_Mkfifo( const char *ospath )
 {
-	FILE	*fifo;
-	int	result;
-	int	fn;
-	struct	stat buf;
-
-	// if file already exists AND is a pipefile, remove it
-	if( !stat( ospath, &buf ) && S_ISFIFO( buf.st_mode ) )
-		FS_Remove( ospath );
-
-	result = mkfifo( ospath, 0600 );
-	if( result != 0 )
-		return NULL;
-
-	fifo = fopen( ospath, "w+" );
-	if( fifo )
-	{
-		fn = fileno( fifo );
-		fcntl( fn, F_SETFL, O_NONBLOCK );
-	}
-
-	return fifo;
+	return NULL;
 }
 
 /*
@@ -454,33 +469,11 @@ void Sys_Sleep( int msec )
 	if( msec == 0 )
 		return;
 
-	if( stdinIsATTY )
-	{
-		fd_set fdset;
+	// With nothing to select() on, we can't wait indefinitely
+	if( msec < 0 )
+		msec = 10;
 
-		FD_ZERO(&fdset);
-		FD_SET(STDIN_FILENO, &fdset);
-		if( msec < 0 )
-		{
-			select(STDIN_FILENO + 1, &fdset, NULL, NULL, NULL);
-		}
-		else
-		{
-			struct timeval timeout;
-
-			timeout.tv_sec = msec/1000;
-			timeout.tv_usec = (msec%1000)*1000;
-			select(STDIN_FILENO + 1, &fdset, NULL, NULL, &timeout);
-		}
-	}
-	else
-	{
-		// With nothing to select() on, we can't wait indefinitely
-		if( msec < 0 )
-			msec = 10;
-
-		usleep( msec * 1000 );
-	}
+	udelay( msec * 1000 );
 }
 
 /*
@@ -492,195 +485,9 @@ Display an error message
 */
 void Sys_ErrorDialog( const char *error )
 {
-	char buffer[ 1024 ];
-	unsigned int size;
-	int f = -1;
-	const char *homepath = Cvar_VariableString( "fs_homepath" );
-	const char *gamedir = Cvar_VariableString( "fs_game" );
-	const char *fileName = "crashlog.txt";
-	char *ospath = FS_BuildOSPath( homepath, gamedir, fileName );
-
-	Sys_Print( va( "%s\n", error ) );
-
-#ifndef DEDICATED
-	Sys_Dialog( DT_ERROR, va( "%s. See \"%s\" for details.", error, ospath ), "Error" );
-#endif
-
-	// Make sure the write path for the crashlog exists...
-	if( FS_CreatePath( ospath ) ) {
-		Com_Printf( "ERROR: couldn't create path '%s' for crash log.\n", ospath );
-		return;
-	}
-
-	// We might be crashing because we maxed out the Quake MAX_FILE_HANDLES,
-	// which will come through here, so we don't want to recurse forever by
-	// calling FS_FOpenFileWrite()...use the Unix system APIs instead.
-	f = open( ospath, O_CREAT | O_TRUNC | O_WRONLY, 0640 );
-	if( f == -1 )
-	{
-		Com_Printf( "ERROR: couldn't open %s\n", fileName );
-		return;
-	}
-
-	// We're crashing, so we don't care much if write() or close() fails.
-	while( ( size = CON_LogRead( buffer, sizeof( buffer ) ) ) > 0 ) {
-		if( write( f, buffer, size ) != size ) {
-			Com_Printf( "ERROR: couldn't fully write to %s\n", fileName );
-			break;
-		}
-	}
-
-	close( f );
+	printf("Sys_ErrorDialog : %s\n",error);
 }
 
-#ifndef MACOS_X
-static char execBuffer[ 1024 ];
-static char *execBufferPointer;
-static char *execArgv[ 16 ];
-static int execArgc;
-
-/*
-==============
-Sys_ClearExecBuffer
-==============
-*/
-static void Sys_ClearExecBuffer( void )
-{
-	execBufferPointer = execBuffer;
-	Com_Memset( execArgv, 0, sizeof( execArgv ) );
-	execArgc = 0;
-}
-
-/*
-==============
-Sys_AppendToExecBuffer
-==============
-*/
-static void Sys_AppendToExecBuffer( const char *text )
-{
-	size_t size = sizeof( execBuffer ) - ( execBufferPointer - execBuffer );
-	int length = strlen( text ) + 1;
-
-	if( length > size || execArgc >= ARRAY_LEN( execArgv ) )
-		return;
-
-	Q_strncpyz( execBufferPointer, text, size );
-	execArgv[ execArgc++ ] = execBufferPointer;
-
-	execBufferPointer += length;
-}
-
-/*
-==============
-Sys_Exec
-==============
-*/
-static int Sys_Exec( void )
-{
-	pid_t pid = fork( );
-
-	if( pid < 0 )
-		return -1;
-
-	if( pid )
-	{
-		// Parent
-		int exitCode;
-
-		wait( &exitCode );
-
-		return WEXITSTATUS( exitCode );
-	}
-	else
-	{
-		// Child
-		execvp( execArgv[ 0 ], execArgv );
-
-		// Failed to execute
-		exit( -1 );
-
-		return -1;
-	}
-}
-
-/*
-==============
-Sys_ZenityCommand
-==============
-*/
-static void Sys_ZenityCommand( dialogType_t type, const char *message, const char *title )
-{
-	Sys_ClearExecBuffer( );
-	Sys_AppendToExecBuffer( "zenity" );
-
-	switch( type )
-	{
-		default:
-		case DT_INFO:      Sys_AppendToExecBuffer( "--info" ); break;
-		case DT_WARNING:   Sys_AppendToExecBuffer( "--warning" ); break;
-		case DT_ERROR:     Sys_AppendToExecBuffer( "--error" ); break;
-		case DT_YES_NO:
-			Sys_AppendToExecBuffer( "--question" );
-			Sys_AppendToExecBuffer( "--ok-label=Yes" );
-			Sys_AppendToExecBuffer( "--cancel-label=No" );
-			break;
-
-		case DT_OK_CANCEL:
-			Sys_AppendToExecBuffer( "--question" );
-			Sys_AppendToExecBuffer( "--ok-label=OK" );
-			Sys_AppendToExecBuffer( "--cancel-label=Cancel" );
-			break;
-	}
-
-	Sys_AppendToExecBuffer( va( "--text=%s", message ) );
-	Sys_AppendToExecBuffer( va( "--title=%s", title ) );
-}
-
-/*
-==============
-Sys_KdialogCommand
-==============
-*/
-static void Sys_KdialogCommand( dialogType_t type, const char *message, const char *title )
-{
-	Sys_ClearExecBuffer( );
-	Sys_AppendToExecBuffer( "kdialog" );
-
-	switch( type )
-	{
-		default:
-		case DT_INFO:      Sys_AppendToExecBuffer( "--msgbox" ); break;
-		case DT_WARNING:   Sys_AppendToExecBuffer( "--sorry" ); break;
-		case DT_ERROR:     Sys_AppendToExecBuffer( "--error" ); break;
-		case DT_YES_NO:    Sys_AppendToExecBuffer( "--warningyesno" ); break;
-		case DT_OK_CANCEL: Sys_AppendToExecBuffer( "--warningcontinuecancel" ); break;
-	}
-
-	Sys_AppendToExecBuffer( message );
-	Sys_AppendToExecBuffer( va( "--title=%s", title ) );
-}
-
-/*
-==============
-Sys_XmessageCommand
-==============
-*/
-static void Sys_XmessageCommand( dialogType_t type, const char *message, const char *title )
-{
-	Sys_ClearExecBuffer( );
-	Sys_AppendToExecBuffer( "xmessage" );
-	Sys_AppendToExecBuffer( "-buttons" );
-
-	switch( type )
-	{
-		default:           Sys_AppendToExecBuffer( "OK:0" ); break;
-		case DT_YES_NO:    Sys_AppendToExecBuffer( "Yes:0,No:1" ); break;
-		case DT_OK_CANCEL: Sys_AppendToExecBuffer( "OK:0,Cancel:1" ); break;
-	}
-
-	Sys_AppendToExecBuffer( "-center" );
-	Sys_AppendToExecBuffer( message );
-}
 
 /*
 ==============
@@ -691,81 +498,11 @@ Display a *nix dialog box
 */
 dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title )
 {
-	typedef enum
-	{
-		NONE = 0,
-		ZENITY,
-		KDIALOG,
-		XMESSAGE,
-		NUM_DIALOG_PROGRAMS
-	} dialogCommandType_t;
-	typedef void (*dialogCommandBuilder_t)( dialogType_t, const char *, const char * );
-
-	const char              *session = getenv( "DESKTOP_SESSION" );
-	qboolean                tried[ NUM_DIALOG_PROGRAMS ] = { qfalse };
-	dialogCommandBuilder_t  commands[ NUM_DIALOG_PROGRAMS ] = { NULL };
-	dialogCommandType_t     preferredCommandType = NONE;
-
-	commands[ ZENITY ] = &Sys_ZenityCommand;
-	commands[ KDIALOG ] = &Sys_KdialogCommand;
-	commands[ XMESSAGE ] = &Sys_XmessageCommand;
-
-	// This may not be the best way
-	if( !Q_stricmp( session, "gnome" ) )
-		preferredCommandType = ZENITY;
-	else if( !Q_stricmp( session, "kde" ) )
-		preferredCommandType = KDIALOG;
-
-	while( 1 )
-	{
-		int i;
-
-		for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
-		{
-			if( preferredCommandType != NONE && preferredCommandType != i )
-				continue;
-
-			if( !tried[ i ] )
-			{
-				int exitCode;
-
-				commands[ i ]( type, message, title );
-				exitCode = Sys_Exec( );
-
-				if( exitCode >= 0 )
-				{
-					switch( type )
-					{
-						case DT_YES_NO:    return exitCode ? DR_NO : DR_YES;
-						case DT_OK_CANCEL: return exitCode ? DR_CANCEL : DR_OK;
-						default:           return DR_OK;
-					}
-				}
-
-				tried[ i ] = qtrue;
-
-				// The preference failed, so start again in order
-				if( preferredCommandType != NONE )
-				{
-					preferredCommandType = NONE;
-					break;
-				}
-			}
-		}
-
-		for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
-		{
-			if( !tried[ i ] )
-				continue;
-		}
-
-		break;
-	}
-
+	printf("Sys_Dialog : %s : %s\n", message, title);
 	Com_DPrintf( S_COLOR_YELLOW "WARNING: failed to show a dialog\n" );
 	return DR_OK;
 }
-#endif
+
 
 /*
 ==============
@@ -793,8 +530,7 @@ void Sys_GLimpInit( void )
 
 void Sys_SetFloatEnv(void)
 {
-	// rounding toward nearest
-	fesetround(FE_TONEAREST);
+
 }
 
 /*
@@ -804,18 +540,29 @@ Sys_PlatformInit
 Unix specific initialisation
 ==============
 */
+extern void threading_init();
+extern void network_init_sys();
 void Sys_PlatformInit( void )
 {
-	const char* term = getenv( "TERM" );
+	// Init libxenon
+	xenos_init(VIDEO_MODE_AUTO);
+	console_init();
 
-	signal( SIGHUP, Sys_SigHandler );
-	signal( SIGQUIT, Sys_SigHandler );
-	signal( SIGTRAP, Sys_SigHandler );
-	signal( SIGIOT, Sys_SigHandler );
-	signal( SIGBUS, Sys_SigHandler );
+	xenon_make_it_faster(XENON_SPEED_FULL);
+	
+#if 1
+	threading_init();
+	network_init_sys();
+#endif	
+	
+	usb_init();
+	usb_do_poll();
 
-	stdinIsATTY = isatty( STDIN_FILENO ) &&
-		!( term && ( !strcmp( term, "raw" ) || !strcmp( term, "dumb" ) ) );
+	xenon_ata_init();
+
+	xenon_atapi_init();
+
+	fatInitDefault();
 }
 
 /*
@@ -852,7 +599,8 @@ Sys_PID
 */
 int Sys_PID( void )
 {
-	return getpid( );
+	printf("Sys_PID : %d\n", 1);
+	return 1;
 }
 
 /*
@@ -862,6 +610,74 @@ Sys_PIDIsRunning
 */
 qboolean Sys_PIDIsRunning( int pid )
 {
-	return kill( pid, 0 ) == 0;
+	printf("Sys_PIDIsRunning : %d\n", pid);
+	return 1;
 }
-#endif
+
+
+
+/*
+==================
+CON_Shutdown
+==================
+*/
+void CON_Shutdown( void )
+{
+}
+
+/*
+==================
+CON_Init
+==================
+*/
+void CON_Init( void )
+{
+}
+
+/*
+==================
+CON_Input
+==================
+*/
+char *CON_Input( void )
+{
+	return NULL;
+}
+
+/*
+==================
+CON_Print
+==================
+*/
+void CON_Print( const char *msg )
+{
+	fputs( msg, stderr );
+}
+
+/*
+==================
+Xenon_LoadLibrary
+==================
+*/
+void *Xenon_LoadLibrary (const char *filename) { TR; return NULL; }; 
+
+/*
+==================
+Xenon_LibraryError
+==================
+*/
+const char *Xenon_LibraryError(void) {TR; return NULL;}; 
+
+/*
+==================
+Xenon_LoadFunction
+==================
+*/
+void *Xenon_LoadFunction(void *handle, char *symbol) {TR; return NULL;};
+
+/*
+==================
+Xenon_UnloadLibrary
+==================
+*/ 
+int Xenon_UnloadLibrary (void *handle) {TR;};

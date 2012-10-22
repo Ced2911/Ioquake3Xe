@@ -2507,6 +2507,14 @@ void Com_AppendCDKey( const char *filename ) {
 Com_WriteCDKey
 =================
 */
+
+#ifdef XENON
+mode_t umask(mode_t u)
+{
+	return u;
+}
+#endif
+
 static void Com_WriteCDKey( const char *filename, const char *ikey ) {
 	fileHandle_t	f;
 	char			fbuffer[MAX_OSPATH];

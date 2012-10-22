@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <ctype.h>
 #include <errno.h>
 
+#ifndef XENON
 #ifndef DEDICATED
 #ifdef USE_LOCAL_HEADERS
 #	include "SDL.h"
@@ -38,6 +39,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #else
 #	include <SDL.h>
 #	include <SDL_cpuinfo.h>
+#endif
 #endif
 #endif
 
@@ -204,11 +206,11 @@ Single exit point (regular exit or in case of error)
 static __attribute__ ((noreturn)) void Sys_Exit( int exitCode )
 {
 	CON_Shutdown( );
-
+#ifndef XENON
 #ifndef DEDICATED
 	SDL_Quit( );
 #endif
-
+#endif
 	if( exitCode < 2 )
 	{
 		// Normal exit
@@ -241,7 +243,7 @@ Sys_GetProcessorFeatures
 cpuFeatures_t Sys_GetProcessorFeatures( void )
 {
 	cpuFeatures_t features = 0;
-
+#ifndef XENON
 #ifndef DEDICATED
 	if( SDL_HasRDTSC( ) )    features |= CF_RDTSC;
 	if( SDL_HasMMX( ) )      features |= CF_MMX;
@@ -252,7 +254,7 @@ cpuFeatures_t Sys_GetProcessorFeatures( void )
 	if( SDL_HasSSE2( ) )     features |= CF_SSE2;
 	if( SDL_HasAltiVec( ) )  features |= CF_ALTIVEC;
 #endif
-
+#endif
 	return features;
 }
 
@@ -579,11 +581,18 @@ void Sys_SigHandler( int signal )
 main
 =================
 */
+#ifndef XENON
 int main( int argc, char **argv )
 {
+#else
+int main( ) 
+{
+	int argc;
+	char **argv;
+#endif
 	int   i;
 	char  commandLine[ MAX_STRING_CHARS ] = { 0 };
-
+#ifndef XENON
 #ifndef DEDICATED
 	// SDL version check
 
@@ -609,8 +618,20 @@ int main( int argc, char **argv )
 
 		Sys_Exit( 1 );
 	}
-#endif
-
+#endif // DEDICATED
+#else
+	char * newargv[] = {
+		"uda:/q3.elf",
+		//"+set", "game", "baseq2", "+set", "cddir", "uda:/baseq2/"
+		"+set", "fs_basepath" , "uda:/",
+		//"+set", "cddir", "uda:/baseq2/",
+		//"+set", "cl_maxfps", "400"
+	};
+	int newargc = sizeof (newargv) / sizeof (char *);
+	
+	argv = newargv;
+	argc = newargc;
+#endif // XENON
 	Sys_PlatformInit( );
 
 	// Set the initial time base
