@@ -4580,7 +4580,9 @@ CL_CDKeyValidate
 =================
 */
 qboolean CL_CDKeyValidate( const char *key, const char *checksum ) {
+	TR
 #ifdef XENON
+	TR
 	return qtrue;
 #else
 #ifdef STANDALONE

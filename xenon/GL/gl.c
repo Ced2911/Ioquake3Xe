@@ -121,6 +121,7 @@ void XenonGLDisplay()
     
     // Reset vertices
     xe_NumVerts = xe_PrevNumVerts = 0;
+    xe_NumIndices = xe_PrevNumIndices = 0;
  
 	ShowFPS();
 }

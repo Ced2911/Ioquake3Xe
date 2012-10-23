@@ -621,11 +621,13 @@ int main( )
 #endif // DEDICATED
 #else
 	char * newargv[] = {
+		// "sda0:/ioquake3/q3.elf",
 		"uda:/q3.elf",
 		//"+set", "game", "baseq2", "+set", "cddir", "uda:/baseq2/"
 		//"+set", "fs_basepath" , "uda:/",
 		//"+set", "cddir", "uda:/baseq2/",
-		//"+set", "cl_maxfps", "400"
+		//"+set", "cl_maxfps", "400",
+		// "+set", "+map", "q3dm17"
 	};
 	int newargc = sizeof (newargv) / sizeof (char *);
 	

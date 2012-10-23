@@ -5,7 +5,7 @@ MACHDEP =  -DXENON -m32 -mno-altivec -fno-pic  -fno-pic -mpowerpc64 -mhard-float
 CC=xenon-gcc
 BASE_CFLAGS=-Dstricmp=strcasecmp -DGAME_HARD_LINKED -DREF_HARD_LINKED -DXENON -I$(DEVKITXENON)/usr/include -Ixenon
 CFLAGS=$(BASE_CFLAGS) -Ofast -fomit-frame-pointer -fno-strength-reduce -funroll-loops -fexpensive-optimizations -g -fno-tree-vectorize -fno-tree-slp-vectorize -ftree-vectorizer-verbose=1 -Wall $(MACHDEP) $(INCLUDE) -DLIBXENON -D__BIG_ENDIAN__ -D__ppc__ -D__powerpc__ -D__POWERPC__ -DELF -D__BIGENDIAN__ -D__PPC__ -D__BIGENDIAN__
-LDFLAGS=-g $(MACHDEP) -Wl,-Map,$(notdir $@).map -L$(DEVKITXENON)/usr/lib -L$(DEVKITXENON)/xenon/lib/32 -lxenon -lm -lfat -T $(LDSCRIPT)
+LDFLAGS=-g $(MACHDEP) -Wl,-Map,$(notdir $@).map -L$(DEVKITXENON)/usr/lib -L$(DEVKITXENON)/xenon/lib/32 -lxenon -lm -lfat -lxtaf -T $(LDSCRIPT)
 
 COMPILE_ARCH=ppc
 COMPILE_PLATFORM=xenon

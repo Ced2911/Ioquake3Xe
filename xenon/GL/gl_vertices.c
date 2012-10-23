@@ -180,11 +180,12 @@ static void GL_SelectShaders() {
 
 static void GL_SubmitVertexes()
 {	
+	/*
 	// never draw this one
 	if (gl_cull_mode == GL_FRONT_AND_BACK)
 		return;
-		
-	// Xe_SetFillMode(xe, XE_FILL_WIREFRAME, XE_FILL_WIREFRAME);
+	*/
+	Xe_SetFillMode(xe, XE_FILL_WIREFRAME, XE_FILL_WIREFRAME);
 		
 	// update states if dirty
 	XeUpdateStates();
@@ -370,11 +371,8 @@ void glDrawBuffer (GLenum mode)
  
 void glArrayElement(GLint i)
 {
-	//TR
-	use_indice_buffer = 1;
-	xe_indices[0] = i;
-	
-	xe_indices++;
+	use_indice_buffer = 1;	
+	*xe_indices++ = i + xe_PrevNumVerts;
 }
 
 void glDrawElements(GLenum mode, GLsizei count,	GLenum type, const GLvoid *	indices)

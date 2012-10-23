@@ -28,10 +28,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  *****************************************************************************/
 
-
+#include <ppc/timebase.h>
 #include "q_shared.h"
 #include "qcommon.h"
 #include "unzip.h"
+
+#define PROFILE	0
 
 /*
 =============================================================================
@@ -1506,6 +1508,9 @@ int FS_Read( void *buffer, int len, fileHandle_t f ) {
 	if (fsh[f].zipFile == qfalse) {
 		remaining = len;
 		tries = 0;
+#if PROFILE
+		uint64_t beg=mftb();
+#endif		
 		while (remaining) {
 			block = remaining;
 			read = fread (buf, 1, block, fsh[f].handleFiles.file.o);
@@ -1526,9 +1531,20 @@ int FS_Read( void *buffer, int len, fileHandle_t f ) {
 			remaining -= read;
 			buf += read;
 		}
+#if PROFILE
+		printf("\n%d bytes, %f KB/s\n",len, (float)(len/1024.0)/((float)(mftb()-beg)/PPC_TIMEBASE_FREQ));
+#endif
 		return len;
 	} else {
+#if PROFILE
+		int ret;
+		uint64_t beg=mftb();
+		ret = unzReadCurrentFile(fsh[f].handleFiles.file.z, buffer, len);
+		printf("\n%d bytes, %f KB/s\n",ret, (float)(ret/1024.0)/((float)(mftb()-beg)/PPC_TIMEBASE_FREQ));
+		return ret;
+#else
 		return unzReadCurrentFile(fsh[f].handleFiles.file.z, buffer, len);
+#endif		
 	}
 }
 

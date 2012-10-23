@@ -33,13 +33,22 @@ void ( * qglClientActiveTextureARB )( GLenum texture );
 void ( * qglLockArraysEXT)( int, int);
 void ( * qglUnlockArraysEXT) ( void );
 
-void		GLimp_EndFrame( void ) {
-	XenonGLDisplay();
+void		GLimp_EndFrame( void ) {	
+	// don't flip if drawing to front buffer
+	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
+	{		
+		XenonGLDisplay();
+	}
 }
 
 void 		GLimp_Init( void )
 {
-	XenonGLInit();
+	static int gl_initilised = 0;
+	
+	if (gl_initilised == 0) {
+		XenonGLInit();
+	}
+	gl_initilised = 1;
 		
 	glConfig.textureCompression = TC_NONE;
 	glConfig.textureEnvAddAvailable = qfalse;
@@ -62,10 +71,11 @@ void 		GLimp_Init( void )
 	glConfig.vidHeight = 480;
 	
 	glConfig.isFullscreen = qtrue;
+	/*
 	glConfig.colorBits = 24;
 	glConfig.depthBits = 8;
 	glConfig.stencilBits = 8;
-	
+	*/
 	IN_Init( );
 }
 

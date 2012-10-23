@@ -824,7 +824,7 @@ else # ifeq sunos
 ifeq ($(PLATFORM),XENON)
 
 	BASE_CFLAGS += -I$(MOUNT_DIR)/xenon
-	LIBS= -lm -lxenon  gl.a -lxenon -lfat
+	LIBS= -lm -lxenon  gl.a -lxenon -lfat -lxtaf -lxenon
 	 
 else # ifeq xenon
 
@@ -1724,7 +1724,8 @@ ifeq ($(PLATFORM),XENON)
     $(B)/xenon/sys.o \
     $(B)/xenon/input.o \
     $(B)/xenon/snddma.o \
-    $(B)/xenon/glimp.o
+    $(B)/xenon/glimp.o \
+    $(B)/xenon/my_setjmp.o
 endif
 
 ifeq ($(PLATFORM),mingw32)

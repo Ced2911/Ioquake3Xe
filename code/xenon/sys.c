@@ -45,6 +45,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <usb/usbmain.h>
 #include <xenos/xenos.h>
 #include <xenon_soc/xenon_power.h>
+#include <libxtaf/xtaf.h>
 
 qboolean stdinIsATTY;
 
@@ -540,8 +541,21 @@ Sys_PlatformInit
 Unix specific initialisation
 ==============
 */
+
+static void ListDevices()
+{
+	int i;
+	for (i = 3; i < STD_MAX; i++) {
+		if (devoptab_list[i]->structSize) {
+			printf("findDevices : %s\r\n", devoptab_list[i]->name);
+		}
+	}
+}
+
 extern void threading_init();
 extern void network_init_sys();
+extern DISC_INTERFACE usb2mass_ops_0;
+
 void Sys_PlatformInit( void )
 {
 	// Init libxenon
@@ -550,7 +564,7 @@ void Sys_PlatformInit( void )
 
 	xenon_make_it_faster(XENON_SPEED_FULL);
 	
-#if 1
+#if 0
 	threading_init();
 	network_init_sys();
 #endif	
@@ -559,10 +573,18 @@ void Sys_PlatformInit( void )
 	usb_do_poll();
 
 	xenon_ata_init();
-
 	xenon_atapi_init();
 
-	fatInitDefault();
+	// fatInitDefault();
+	// XTAFMount();	
+	
+	// fatInit(16, 1);
+	
+	fatMount ("uda", &usb2mass_ops_0, 0, 256, 64);
+	
+	ListDevices();
+	
+	Sys_SetEnv("HOME", "uda:/");
 }
 
 /*
