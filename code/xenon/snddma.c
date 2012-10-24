@@ -25,9 +25,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
+#include "../client/snd_local.h"
+
+static int snd_inited = 0;
 
 qboolean SNDDMA_Init(void)
 {
+	int dmasize = 0;
+	
+	if (snd_inited)
+		return qtrue;
+	
+	// signed 16bit
+	dma.samplebits = 0x10;  // first byte of format is bits.
+	dma.channels = 2;
+	dma.samples = 32768;
+	dma.submission_chunk = 1;
+	dma.speed = 48000;
+	dmasize = (dma.samples * (dma.samplebits/8));
+	dma.buffer = calloc(1, dmasize);
+	
+	snd_inited = 1;
+	
 	return qtrue;
 }
 

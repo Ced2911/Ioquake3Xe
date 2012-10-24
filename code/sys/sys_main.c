@@ -627,7 +627,7 @@ int main( )
 		//"+set", "fs_basepath" , "uda:/",
 		//"+set", "cddir", "uda:/baseq2/",
 		//"+set", "cl_maxfps", "400",
-		// "+set", "+map", "q3dm17"
+		"+set", "+map", "q3dm1"
 	};
 	int newargc = sizeof (newargv) / sizeof (char *);
 	

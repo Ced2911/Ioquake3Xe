@@ -119,6 +119,10 @@ void XenonGLDisplay()
     // Reset states
     Xe_InvalidateState(xe);
     
+    
+    
+    // printf("xe_NumVerts %d xe_NumIndices %d\r\n", xe_NumVerts, xe_NumIndices);
+    
     // Reset vertices
     xe_NumVerts = xe_PrevNumVerts = 0;
     xe_NumIndices = xe_PrevNumIndices = 0;
