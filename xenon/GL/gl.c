@@ -12,6 +12,12 @@ typedef unsigned int DWORD;
 #include "shaders/opengl.ps.texture.h"
 #include "shaders/opengl.vs.h"
 
+
+void XeGetScreenSize(int * width, int * height) {
+	*width = Xe_GetFramebufferSurface(xe)->width;
+	*height = Xe_GetFramebufferSurface(xe)->height;
+}
+
 void XenonGLInit(){
 	// init video
 	xe=&_xe;
@@ -127,7 +133,7 @@ void XenonGLDisplay()
     xe_NumVerts = xe_PrevNumVerts = 0;
     xe_NumIndices = xe_PrevNumIndices = 0;
  
-	ShowFPS();
+	// ShowFPS();
 }
 
 void XenonBeginGl()
@@ -156,7 +162,7 @@ void XenonEndGl()
 	// Reset vertices
     xe_NumVerts = xe_PrevNumVerts = 0;
  
-	ShowFPS();
+	// ShowFPS();
 }
 
 void xe_gl_error(const char * format, ...)

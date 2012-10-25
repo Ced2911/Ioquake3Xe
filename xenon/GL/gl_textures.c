@@ -274,7 +274,6 @@ static void Xe_ReleaseTextures (void)
  
 void glDeleteTextures(GLsizei n, const GLuint *textures)
 {
-	TR
 	int i;
 	glXeSurface_t *tex;
 	

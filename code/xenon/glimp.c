@@ -66,10 +66,11 @@ void 		GLimp_Init( void )
 	Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
 	Q_strncpyz( glConfig.extensions_string, (char *) qglGetString (GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
 		
-		
+	XeGetScreenSize(&glConfig.vidWidth, &glConfig.vidHeight);
+	/*
 	glConfig.vidWidth = 640;
 	glConfig.vidHeight = 480;
-	
+	*/
 	glConfig.isFullscreen = qtrue;
 	/*
 	glConfig.colorBits = 24;

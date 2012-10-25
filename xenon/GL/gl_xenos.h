@@ -143,6 +143,14 @@ typedef struct {
 	int stencil_write_b;
 	int stencil_write;
 	
+	// viewport
+	int viewport_x;
+	int viewport_y;
+	int viewport_w;
+	int viewport_h;
+	int viewport_zn;
+	int viewport_zf;
+	
 	// other
 	int fill_mode_front;
 	int fill_mode_back;
@@ -168,7 +176,7 @@ struct XenosShader * pPixelTextureShader;
 struct XenosShader * pCurrentPs;
 struct XenosShader * pCurrentTexturedPs;
 struct XenosVertexBuffer * pVbGL;
-struct XenosIndicesBuffer * pIbGL;
+struct XenosIndexBuffer * pIbGL;
 
 /***********************************************************************
  * Utils
@@ -182,3 +190,4 @@ void XenonEndGl();
 void XeGLInitTextures();
 void GL_InitShaderCache();
 void XeRefreshAllDirtyTextures();
+void XeGetScreenSize(int * width, int * height);

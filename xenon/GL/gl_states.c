@@ -476,6 +476,45 @@ void glGetIntegerv(GLenum pname, GLint * params)
 		
 }
 
+/***********************************************************************
+ * Viewport
+ ***********************************************************************/
+/* todo */
+/*
+int viewport_x;
+int viewport_y;
+int viewport_w;
+int viewport_h;
+int viewport_zn;
+int viewport_zf;
+*/ 
+void glDepthRange (GLclampd zNear, GLclampd zFar)
+{
+	/*
+	znear = zNear;
+	zfar = zFar;
+	*/
+	xe_state.viewport_zn = zFar;
+	xe_state.viewport_zf = zNear;
+	
+	xe_state.dirty = 1;
+}
+
+void glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	//xe_gl_log("glViewport Not implemented\n");
+	//printf("glViewport : %d - %d - %d - %d\n", x, y, width, height );
+	xe_state.viewport_w = width;
+	xe_state.viewport_h = height;
+	xe_state.viewport_x = x;
+	xe_state.viewport_y = y;
+	
+	//if (xe_state.viewport_x||xe_state.viewport_y)
+	//	printf("glViewport : %d - %d - %d - %d\n", xe_state.viewport_x, xe_state.viewport_y, xe_state.viewport_w, xe_state.viewport_h );
+	
+	xe_state.dirty = 1;
+}
+
 
 /***********************************************************************
  * States Management
@@ -503,7 +542,7 @@ void XeUpdateStates() {
 		// Culling
 		Xe_SetCullMode(xe, xe_state.cull_mode);
 
-#if 0
+#if 1
 		// Stencil
 		Xe_SetStencilEnable(xe, xe_state.stencil_enable);
 		Xe_SetStencilFunc(xe, xe_state.stencil_func_b, xe_state.stencil_func);
@@ -515,6 +554,11 @@ void XeUpdateStates() {
 		Xe_SetStencilMask(xe, xe_state.stencil_mask_b, xe_state.stencil_mask);
 		Xe_SetStencilWriteMask(xe, xe_state.stencil_write_b, xe_state.stencil_write);
 #endif
+
+		// viewport
+		/** offset doesn't work yet **/
+		Xe_SetViewport(xe, 0, 0, xe_state.viewport_w, xe_state.viewport_h, xe_state.viewport_zn, xe_state.viewport_zf);
+
 		// other		
 		//Xe_SetFillMode(xe, xe_state.fill_mode_front, xe_state.fill_mode_back);
 		//Xe_SetFillMode(xe, XE_FILL_SOLID, XE_FILL_SOLID);
@@ -524,6 +568,7 @@ void XeUpdateStates() {
 }
 
 void XeInitStates() {
+	memset(&xe_state, 0, sizeof(xe_states_t));
 	xe_state.fill_mode_back = xe_state.fill_mode_front = XE_FILL_SOLID;	
 	xe_state.cull_mode = XE_CULL_NONE;
 	
