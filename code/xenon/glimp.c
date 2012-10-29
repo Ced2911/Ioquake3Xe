@@ -24,6 +24,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../sys/sys_local.h"
 
 #include <GL/gl_xenos.h>
+#include <xenon_soc/xenon_power.h>
+#include <ppc/atomic.h>
+#include <debug.h>
+
+static void (*glimpRenderThread)( void ) = NULL;
 
 qboolean ( * qwglSwapIntervalEXT)( int interval );
 void ( * qglMultiTexCoord2fARB )( GLenum texture, float s, float t );
@@ -33,15 +38,16 @@ void ( * qglClientActiveTextureARB )( GLenum texture );
 void ( * qglLockArraysEXT)( int, int);
 void ( * qglUnlockArraysEXT) ( void );
 
-void		GLimp_EndFrame( void ) {	
+void GLimp_EndFrame( void ) {	
 	// don't flip if drawing to front buffer
 	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
 	{		
-		XenonGLDisplay();
+		//XenonGLDisplay();
+		XenonEndGl();
 	}
 }
 
-void 		GLimp_Init( void )
+void GLimp_Init( void )
 {
 	static int gl_initilised = 0;
 	
@@ -77,6 +83,18 @@ void 		GLimp_Init( void )
 	glConfig.depthBits = 8;
 	glConfig.stencilBits = 8;
 	*/
+	
+
+	// todo
+	glConfig.numTextureUnits = 1;
+	
+	qglLockArraysEXT = glLockArraysEXT;
+	qglUnlockArraysEXT = glUnlockArraysEXT;
+	qglMultiTexCoord2fARB = glMultiTexCoord2f;
+	
+	// not working
+	// qglClientActiveTextureARB = qglActiveTextureARB = glActiveTexture;
+	
 	IN_Init( );
 }
 
@@ -93,8 +111,8 @@ void GLimp_LogComment( char *comment ) {
 qboolean QGL_Init( const char *dllname ) {
 	
 	qwglSwapIntervalEXT = NULL;
-	qglMultiTexCoord2fARB = NULL;
-	qglActiveTextureARB = NULL;
+	qglMultiTexCoord2fARB = glMultiTexCoord2f;
+	qglClientActiveTextureARB = qglActiveTextureARB = glActiveTexture;
 	qglClientActiveTextureARB = NULL;
 	qglLockArraysEXT = NULL;
 	qglUnlockArraysEXT = NULL;
@@ -105,14 +123,18 @@ qboolean QGL_Init( const char *dllname ) {
 void		QGL_Shutdown( void ) {
 }
 
+#if 0
 // No SMP - stubs
+
+
 void GLimp_RenderThreadWrapper( void *arg )
 {
+	//glimpRenderThread();
 }
 
 qboolean GLimp_SpawnRenderThread( void (*function)( void ) )
 {
-	ri.Printf( PRINT_WARNING, "ERROR: SMP support was disabled at compile time\n");
+	//glimpRenderThread = function;
 	return qfalse;
 }
 
@@ -134,3 +156,73 @@ void GLimp_Minimize(void)
 {
 	
 }
+#else 
+static unsigned char stack[0x10000]  __attribute__ ((aligned (128)));
+static void (*glimpRenderThread)( void );
+static unsigned int render_lock = 0;
+static volatile void    *smpData = NULL;
+static volatile qboolean smpDataReady;
+
+void GLimp_RenderThreadWrapper( void *arg )
+{
+	glimpRenderThread();
+}
+
+qboolean GLimp_SpawnRenderThread( void (*function)( void ) )
+{
+	TR
+	glimpRenderThread = function;
+	
+	// wait for thread
+	while(xenon_is_thread_task_running(2));
+	
+	TR
+	
+	xenon_run_thread_task(2, stack - 0x1000, GLimp_RenderThreadWrapper);
+	return true;
+}
+
+void *GLimp_RendererSleep( void )
+{
+	void * data = NULL;
+	lock(&render_lock);
+	smpData = NULL;
+	smpDataReady = qfalse;
+	
+	while ( !smpDataReady ) {
+		unlock(&render_lock);
+		asm volatile("db16cyc");
+		lock(&render_lock);
+	}
+	
+	data = (void *)smpData;
+	unlock(&render_lock);
+	return data;
+}
+
+void GLimp_FrontEndSleep( void )
+{	
+	lock(&render_lock);
+	while ( smpData ) {
+		unlock(&render_lock);
+		asm volatile("db16cyc");
+		lock(&render_lock);
+	}
+	unlock(&render_lock);
+}
+
+void GLimp_WakeRenderer( void *data )
+{
+	lock(&render_lock);
+	assert( smpData == NULL );
+	smpData = data;
+	smpDataReady = qtrue;
+	unlock(&render_lock);
+}
+
+
+void GLimp_Minimize(void)
+{
+	
+}
+#endif

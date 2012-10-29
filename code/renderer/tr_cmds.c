@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "tr_local.h"
+#include <GL/gl_xenos.h>
 
 volatile renderCommandList_t	*renderCommandList;
 
@@ -347,6 +348,7 @@ for each RE_EndFrame
 ====================
 */
 void RE_BeginFrame( stereoFrame_t stereoFrame ) {
+	XenonBeginGl();
 	drawBufferCommand_t	*cmd = NULL;
 	colorMaskCommand_t *colcmd = NULL;
 

@@ -25,17 +25,17 @@ static int scissor_x, scissor_y, scissor_w, scissor_h;
 
 static void updateScissor(int enabled)
 {
-	//Xe_SetScissor(xe, enabled, scissor_x, scissor_y, scissor_x+scissor_w, scissor_y+scissor_h);
+	xe_state.scissor_enabled = enabled;
+	xe_state.dirty = 1;
 }
 
 void glScissor (GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	scissor_x = x;
-	scissor_y = y;
-	scissor_w = width;
-	scissor_h = height;
-	
-	//Xe_SetScissor(xe, 1, scissor_x, scissor_y, scissor_x+scissor_w, scissor_y+scissor_h);
+	xe_state.scissor_x = x;
+	xe_state.scissor_y = y;
+	xe_state.scissor_w = width;
+	xe_state.scissor_h = height;
+	xe_state.dirty = 1;
 }
 
 /***********************************************************************
@@ -338,15 +338,18 @@ void GlEnableDisable(GLenum cap, int enable)
 			gl_cull_enable = GL_TRUE;
 		updateCullMode();
 		break;
-		
+	case GL_STENCIL_TEST:
+		xe_state.scissor_enabled = enable;
+		break;
 	case GL_DEPTH_TEST:
 		xe_state.z_enable = enable;
 		break;
-		
 	case GL_FOG:
 		return;
 	case GL_POLYGON_OFFSET_FILL:
 	case GL_POLYGON_OFFSET_LINE:
+		xe_state.polygon_offset_enabled = enable;
+		break;
 	default:
 		return;
 	}
@@ -409,7 +412,7 @@ void glPolygonMode (GLenum face, GLenum mode)
 
 void glPolygonOffset (GLfloat factor, GLfloat units)
 {
-
+	xe_state.zoffset = units;
 }
 
 void glClipPlane(GLenum plane,
@@ -468,6 +471,10 @@ void glGetIntegerv(GLenum pname, GLint * params)
 		params[0] = 8; // ?
 		break;
 
+	case GL_MAX_TEXTURE_UNITS_ARB:
+		params[0] = 2;
+		break;
+
 	default:
 		
 		params[0] = 0;
@@ -515,6 +522,9 @@ void glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 	xe_state.dirty = 1;
 }
 
+// 256/(2^24-1)
+#define ZOFFSET_VALUE
+static float zoffset_bias	= 0.0000152588f;
 
 /***********************************************************************
  * States Management
@@ -542,6 +552,8 @@ void XeUpdateStates() {
 		// Culling
 		Xe_SetCullMode(xe, xe_state.cull_mode);
 
+		// Scissor
+		// Xe_SetScissor(xe, xe_state.scissor_enabled, xe_state.scissor_x, xe_state.scissor_y, xe_state.scissor_x+scissor_w, xe_state.scissor_y+scissor_h);
 #if 1
 		// Stencil
 		Xe_SetStencilEnable(xe, xe_state.stencil_enable);
@@ -557,7 +569,13 @@ void XeUpdateStates() {
 
 		// viewport
 		/** offset doesn't work yet **/
-		Xe_SetViewport(xe, 0, 0, xe_state.viewport_w, xe_state.viewport_h, xe_state.viewport_zn, xe_state.viewport_zf);
+		float zn = xe_state.viewport_zn;
+		float zf = xe_state.viewport_zf;
+		if (xe_state.polygon_offset_enabled) {
+			zn -= zoffset_bias * xe_state.zoffset;
+			zf -= zoffset_bias * xe_state.zoffset;
+		}
+		Xe_SetViewport(xe, 0, 0, xe_state.viewport_w, xe_state.viewport_h, zn, zf);
 
 		// other		
 		//Xe_SetFillMode(xe, xe_state.fill_mode_front, xe_state.fill_mode_back);

@@ -823,8 +823,10 @@ else # ifeq sunos
 #############################################################################
 ifeq ($(PLATFORM),XENON)
 
+	HAVE_VM_COMPILED = true
+	OPTIMIZEVM += $(BASE_CFLAGS)
 	BASE_CFLAGS += -I$(MOUNT_DIR)/xenon
-	LIBS= -lm -lxenon  gl.a -lxenon -lfat -lxtaf -lxenon
+	LIBS= -lm -lxenon  gl.a -lxenon -lpng -lz -lm -lfat -lxtaf -lxenon
 	 
 else # ifeq xenon
 
@@ -1216,8 +1218,8 @@ TOOLS_CFLAGS += $(TOOLS_OPTIMIZE) \
                 -DTEMPDIR=\"$(TEMPDIR)\" -DSYSTEM=\"\" \
                 -I$(Q3LCCSRCDIR) \
                 -I$(LBURGDIR)
-TOOLS_LIBS =
-TOOLS_LDFLAGS =
+TOOLS_LIBS += -DTOOLS
+TOOLS_LDFLAGS += -DTOOLS
 
 ifeq ($(GENERATE_DEPENDENCIES),1)
 	TOOLS_CFLAGS += -MMD
@@ -1725,6 +1727,8 @@ ifeq ($(PLATFORM),XENON)
     $(B)/xenon/input.o \
     $(B)/xenon/snddma.o \
     $(B)/xenon/glimp.o \
+    $(B)/xenon/screencapture.o \
+    $(B)/xenon/httpd.o \
     $(B)/xenon/my_setjmp.o
 endif
 

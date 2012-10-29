@@ -10,7 +10,7 @@ glXeSurface_t * glXeSurfaces = NULL;
 
 #define TEXTURE_SLOT_EMPTY -1
 
-#define TEXMIN 128
+#define TEXMIN 32
 
 // #define USE_TILED_TEXTURE 1
 
@@ -627,7 +627,7 @@ void glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei wid
 
 	xeTmus[xeCurrentTMU].boundtexture->dirty = 1;
 #endif	
-//	handle_small_surface(surf, NULL);
+	handle_small_surface(surf, NULL);
 }
 
 /** Not used in QII */
@@ -644,9 +644,11 @@ void glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, GLvo
 static int getTmu(GLenum texture)
 {
 	switch(texture) {
+		case 0:
 		case GL_TEXTURE0_SGIS:
 		case GL_TEXTURE0:
 			return 0;
+		case 1:
 		case GL_TEXTURE1_SGIS:
 		case GL_TEXTURE1:
 			return 1;
@@ -658,6 +660,7 @@ static int getTmu(GLenum texture)
 			*/
 		default:
 			TR
+			printf("%x\n", texture);
 			return 0;
 	}
 }

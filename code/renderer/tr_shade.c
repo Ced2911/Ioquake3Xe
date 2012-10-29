@@ -26,6 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <altivec.h>
 #endif
 
+#include <GL/gl_xenos.h>
+#include <xenos/xe.h>
+
 /*
 
   THIS ENTIRE FILE IS BACK END
@@ -153,6 +156,138 @@ static void R_DrawStripElements( int numIndexes, const glIndex_t *indexes, void 
 }
 
 
+/*
+==================
+R_DrawElementsXenon
+
+Optionally performs our own glDrawElements that looks for strip conditions
+instead of using the single glDrawElements call that may be inefficient
+without compiled vertex arrays.
+==================
+*/
+#define qglLockArraysEXT XeLockArrays
+#define qglUnlockArraysEXT  XeUnlockArraysEXT
+#define qglColorPointer XeColorPointer
+#define qglTexCoordPointer XeTexPointer
+#define qglVertexPointer XeVertPointer
+
+/** 16 for vertice in general **/
+static int vertice_stride;
+static int vertice_nbr;
+static void * vertice_ptr = NULL;
+static void * color_ptr = NULL;
+static void * texcoords_ptr = NULL;
+static void * vertice_changed = 0;
+
+static void XeUnlockArraysEXT(void) 
+{
+	
+}
+
+static void XeLockArrays(int first, int count)
+{
+	vertice_nbr = count;
+}
+
+
+static void XeColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *	pointer)
+{
+	color_ptr = pointer;
+}
+
+static void XeTexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	texcoords_ptr = pointer;
+}
+
+static void XeVertPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	if (vertice_ptr =! pointer) {
+		vertice_changed ++;
+	}
+	vertice_ptr = pointer;
+	vertice_stride = stride; // 16
+}
+
+#define COLOR_ARGB(a,b,g,r) ((unsigned int)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
+
+static void R_DrawElementsXenon( int numIndexes, const glIndex_t *indexes )
+{
+#if 1
+	int i = 0;
+	
+	union {
+		float f;
+		unsigned int u32;
+	} color;
+	
+	// Begin
+	xe_PrevNumVerts = xe_NumVerts;
+	xe_PrevNumIndices = xe_NumIndices;
+	
+	//printf("\n\nnew batch\n");
+	
+	// vertices
+	for (i = 0 ; i < vertice_nbr ; i++) {
+		float * v = (float*) vertice_ptr;
+		float * t = (float*) texcoords_ptr;
+		unsigned char * c = (unsigned char*) color_ptr;
+		//color.u32 = COLOR_ARGB(c[0], c[1], c[2], c[3]);
+		color.u32 = 0xFFFFFFFF;
+		
+		*xe_Vertices++ = v[0];
+		*xe_Vertices++ = v[1];
+		*xe_Vertices++ = v[2];
+		*xe_Vertices++ = 1;
+		
+		*xe_Vertices++ = v[0];
+		*xe_Vertices++ = v[1];
+		
+		*xe_Vertices++ = v[0];
+		*xe_Vertices++ = v[1];
+		
+		*xe_Vertices++ = color.f;
+		
+		
+		vertice_ptr += vertice_stride;
+		texcoords_ptr += 2 * sizeof(float);
+		color_ptr += 4 * sizeof(char);
+		
+		//printf("xyz: %f - %f - %f\n", v[0], v[1], v[2]);
+		
+		xe_NumVerts++;
+	}
+	
+	// indices
+	for (i = 0 ; i < numIndexes ; i++) {
+		//printf("i: %d\n", indexes[i] + xe_PrevNumVerts);
+		*xe_indices++ = indexes[i] + xe_PrevNumVerts;
+		xe_NumIndices++;
+	}
+	
+	Xe_SetShader(xe, SHADER_TYPE_VERTEX, pVertexShader, 0);
+	Xe_SetShader(xe, SHADER_TYPE_PIXEL, pPixelColorShader, 0);
+	
+	Xe_SetIndices(xe, pIbGL);
+	Xe_SetStreamSource(xe, 0, pVbGL, 0, 10);
+	
+	
+	//printf("Xe_DrawIndexedPrimitive %d %d %d %d %d\n", xe_PrevNumVerts, 0, vertice_nbr, xe_PrevNumIndices, (xe_NumIndices - xe_PrevNumIndices)/3);
+	// End
+	/*
+	Xe_DrawIndexedPrimitive(
+		xe, 
+		XE_PRIMTYPE_TRIANGLELIST, 
+		xe_PrevNumVerts, 0,
+		vertice_nbr, 
+		xe_PrevNumIndices, 
+		(xe_NumIndices - xe_PrevNumIndices)/3
+	);
+	**/
+	
+	//Xe_DrawPrimitive(xe, XE_PRIMTYPE_TRIANGLELIST, xe_PrevNumVerts, (xe_NumVerts - xe_PrevNumVerts)/3);
+#endif	
+}
 
 /*
 ==================
@@ -180,6 +315,10 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 		}
 	}
 
+	if ( primitives == 4) {
+		R_DrawElementsXenon( numIndexes, indexes);
+		return;
+	}
 
 	if ( primitives == 2 ) {
 		qglDrawElements( GL_TRIANGLES, 
@@ -201,7 +340,6 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 
 	// anything else will cause no drawing
 }
-
 
 /*
 =============================================================

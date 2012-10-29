@@ -133,7 +133,7 @@ void XenonGLDisplay()
     xe_NumVerts = xe_PrevNumVerts = 0;
     xe_NumIndices = xe_PrevNumIndices = 0;
  
-	// ShowFPS();
+	ShowFPS();
 }
 
 void XenonBeginGl()
@@ -162,7 +162,7 @@ void XenonEndGl()
 	// Reset vertices
     xe_NumVerts = xe_PrevNumVerts = 0;
  
-	// ShowFPS();
+	ShowFPS();
 }
 
 void xe_gl_error(const char * format, ...)

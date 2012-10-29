@@ -2428,9 +2428,11 @@ void D3D_ResetMode (int width, int height, int bpp, BOOL windowed);
 #define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT  0x83F3
 
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+#define GL_MAX_TEXTURE_UNITS_ARB 0x84E2
 
 void glActiveTexture(GLenum texture);
 void glMultiTexCoord1f(GLenum target, GLfloat s);
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
-
+void glLockArraysEXT(int, int);
+void glUnlockArraysEXT(void);
 #endif

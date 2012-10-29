@@ -49,6 +49,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 qboolean stdinIsATTY;
 
+void http_output_start();
+
 char * dirname(const char *path)
 {
 	static char dname[MAXPATHLEN];
@@ -560,9 +562,10 @@ void Sys_PlatformInit( void )
 {
 	// Init libxenon
 	xenos_init(VIDEO_MODE_AUTO);
-	console_init();
 
 	xenon_make_it_faster(XENON_SPEED_FULL);
+	
+	http_output_start();
 	
 #if 0
 	threading_init();
@@ -645,6 +648,7 @@ CON_Shutdown
 */
 void CON_Shutdown( void )
 {
+	console_close();
 }
 
 /*
@@ -654,6 +658,7 @@ CON_Init
 */
 void CON_Init( void )
 {
+	console_init();
 }
 
 /*

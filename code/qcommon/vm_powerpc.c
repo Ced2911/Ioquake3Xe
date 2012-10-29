@@ -26,18 +26,44 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #else
 #include <ppc/cache.h>
 #include <malloc.h>
+
+#define 	PROT_NONE   0
+#define 	PROT_READ   1
+#define 	PROT_WRITE   2
+#define 	PROT_EXEC   4
+#define 	MAP_FILE   0
+#define 	MAP_SHARED   1
+#define 	MAP_PRIVATE   2
+#define 	MAP_TYPE   0xF
+#define 	MAP_FIXED   0x10
+#define 	MAP_ANONYMOUS   0x20
+#define 	MAP_ANON   MAP_ANONYMOUS
+#define 	MAP_FAILED   ((void *)-1)
+
 void * mmap(void *start, size_t length, int prot , int flags, int fd, off_t offset)
 {
-	
+	return malloc(length);
 }
 int munmap(void *start, size_t length) 
 {
-	
+	free(start);
+	return 0;
 }
 
 int mprotect(const void *addr, size_t *len, int prot) {
 	memicbi(addr,len);
 }
+
+#define     timersub(a, b, result)                                      \
+  do {                                                            \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                       \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                    \
+    if ((result)->tv_usec < 0) {                                  \
+      --(result)->tv_sec;                                         \
+      (result)->tv_usec += 1000000;                               \
+    }                                                       \
+  } while (0)
+
 #endif
 #include <sys/time.h>
 #include <time.h>

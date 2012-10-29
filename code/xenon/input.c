@@ -39,41 +39,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define RELEASED(x) ((!ctrl.x) && (old_ctrl.x))
 
 enum XE_BUTTONS {
+	XE_BTN_UP, XE_BTN_DOWN, XE_BTN_LEFT, XE_BTN_RIGHT,
 	XE_BTN_A, XE_BTN_B, XE_BTN_X, XE_BTN_Y,
 	XE_BTN_START, XE_BTN_BACK,
 	XE_BTN_RB, XE_BTN_LB,
 	XE_BTN_RT, XE_BTN_LT,
 	XE_BTN_S1Z, XE_BTN_S2Z,
 	XE_BTN_MAX
-};
-
-// We translate axes movement into keypresses
-static int joy_keys[16] = {
-	/*
-	K_LEFTARROW, K_RIGHTARROW,
-	K_UPARROW, K_DOWNARROW,
-	*/
-	K_MOUSE1, K_MOUSE2,
-	K_MOUSE3, K_MOUSE4,
-	K_JOY17, K_JOY18,
-	K_JOY19, K_JOY20,
-	K_JOY21, K_JOY22,
-	K_JOY23, K_JOY24,
-	K_JOY25, K_JOY26,
-	K_JOY27, K_JOY28
-};
-
-// translate hat events into keypresses
-// the 4 highest buttons are used for the first hat ...
-static int hat_keys[16] = {
-	K_JOY29, K_JOY30,
-	K_JOY31, K_JOY32,
-	K_JOY25, K_JOY26,
-	K_JOY27, K_JOY28,
-	K_JOY21, K_JOY22,
-	K_JOY23, K_JOY24,
-	K_JOY17, K_JOY18,
-	K_JOY19, K_JOY20
 };
 
 struct
@@ -92,6 +64,7 @@ static cvar_t *in_joystickUseAnalog = NULL;
 
 static struct controller_data_s ctrl, old_ctrl;
 
+extern void Key_SetBinding( int keynum, const char *binding );
 
 static void IN_InitJoystick( void ) {
 	
@@ -105,10 +78,39 @@ static void IN_InitJoystick( void ) {
 	
 	Com_DPrintf( "Joystickopened\n");
 	Com_DPrintf( "Use Analog: %s\n", in_joystickUseAnalog->integer ? "Yes" : "No" );
+	
+	// UP DOWN LEFT RIGHT
+	Key_SetBinding(K_JOY1 + XE_BTN_UP, "+moveup");
+	Key_SetBinding(K_JOY1 + XE_BTN_DOWN, "+movedown");
+	Key_SetBinding(K_JOY1 + XE_BTN_LEFT, "weapprev");
+	Key_SetBinding(K_JOY1 + XE_BTN_RIGHT, "weapnext");
+		
+	// ABXY
+	Key_SetBinding(K_JOY1 + XE_BTN_A, "+attack");
+	Key_SetBinding(K_JOY1 + XE_BTN_B, "+strafe");
+	Key_SetBinding(K_JOY1 + XE_BTN_X, "weapprev");
+	Key_SetBinding(K_JOY1 + XE_BTN_Y, "weapnext");
+	
+	// START BACK
+	Key_SetBinding(K_JOY1 + XE_BTN_START, "+button2");
+	Key_SetBinding(K_JOY1 + XE_BTN_BACK, "+togglemenu");
 }
 
 static int JoyPressed(int btn) {
 	switch(btn) {
+		case XE_BTN_UP: {
+			return PRESSED(up);
+		}
+		case XE_BTN_DOWN: {
+			return PRESSED(down);
+		}
+		case XE_BTN_LEFT: {
+			return PRESSED(left);
+		}
+		case XE_BTN_RIGHT: {
+			return PRESSED(right);
+		}
+		
 		case XE_BTN_A: {
 			return PRESSED(a);
 		}
@@ -134,6 +136,19 @@ static int JoyPressed(int btn) {
 
 static int JoyReleased(int btn) {
 	switch(btn) {
+		case XE_BTN_UP: {
+			return RELEASED(up);
+		}
+		case XE_BTN_DOWN: {
+			return RELEASED(down);
+		}
+		case XE_BTN_LEFT: {
+			return RELEASED(left);
+		}
+		case XE_BTN_RIGHT: {
+			return RELEASED(right);
+		}
+		
 		case XE_BTN_A: {
 			return RELEASED(a);
 		}
@@ -157,23 +172,16 @@ static int JoyReleased(int btn) {
 	}
 }
 
-static signed short JoyGetAxisValue(signed short val) {
-	if( val > 14000 || val < -14000)
-		return val;
-	else 
-		return 0;
-}
-
-static void JoySetAxisValue(int axis, signed short value) {
-	value = JoyGetAxisValue(value);
-	Com_QueueEvent( 0, SE_JOYSTICK_AXIS, axis, JoyGetAxisValue(value), 0, NULL );	
+static void JoySetAxisValue(int axis, signed short value) {	
+	float f = ( (float) abs(value) ) / 32767.0f;	
+	if( f < in_joystickThreshold->value ) value = 0;	
+	Com_QueueEvent( 0, SE_JOYSTICK_AXIS, axis, value, 0, NULL );	
 }
 
 static void IN_JoyMove( void ) {
 	int i;
 	unsigned int hats = 0;
 	unsigned int axes = 0;
-	qboolean joy_pressed[ARRAY_LEN(joy_keys)];
 	
 	// query the stick buttons...
 	
@@ -185,31 +193,6 @@ static void IN_JoyMove( void ) {
 			Com_QueueEvent( 0, SE_KEY, K_JOY1 + i, qfalse, 0, NULL );
 		}
 	}
-
-	// look at the hats...        
-	if (RELEASED(up))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[0], qfalse, 0, NULL );
-		
-	if (RELEASED(right))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[1], qfalse, 0, NULL );
-		
-	if (RELEASED(down))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[2], qfalse, 0, NULL );
-		
-	if (RELEASED(left))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[3], qfalse, 0, NULL );
-		
-	if (PRESSED(up))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[0], qtrue, 0, NULL );
-		
-	if (PRESSED(right))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[1], qtrue, 0, NULL );
-		
-	if (PRESSED(down))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[2], qtrue, 0, NULL );
-		
-	if (PRESSED(left))
-		Com_QueueEvent( 0, SE_KEY, hat_keys[3], qtrue, 0, NULL );
 			
 	// finally, look at the axes...
 	JoySetAxisValue(0, ctrl.s1_x);
@@ -238,8 +221,5 @@ void IN_Shutdown( void ) {
 }
 
 void IN_Restart( void ) {
-}
-
-void Sys_SendKeyEvents (void) {
 }
 

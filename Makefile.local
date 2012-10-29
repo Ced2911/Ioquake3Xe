@@ -7,6 +7,11 @@ BASE_CFLAGS=-Dstricmp=strcasecmp -DGAME_HARD_LINKED -DREF_HARD_LINKED -DXENON -I
 CFLAGS=$(BASE_CFLAGS) -Ofast -fomit-frame-pointer -fno-strength-reduce -funroll-loops -fexpensive-optimizations -g -fno-tree-vectorize -fno-tree-slp-vectorize -ftree-vectorizer-verbose=1 -Wall $(MACHDEP) $(INCLUDE) -DLIBXENON -D__BIG_ENDIAN__ -D__ppc__ -D__powerpc__ -D__POWERPC__ -DELF -D__BIGENDIAN__ -D__PPC__ -D__BIGENDIAN__
 LDFLAGS=-g $(MACHDEP) -Wl,-Map,$(notdir $@).map -L$(DEVKITXENON)/usr/lib -L$(DEVKITXENON)/xenon/lib/32 -lxenon -lm -lfat -lxtaf -T $(LDSCRIPT)
 
+TOOLS_CFLAGS= $(BASE_CFLAGS) -DXENON -I$(DEVKITXENON)/usr/include -Ixenon
+
+TOOLS_LIBS = 
+TOOLS_LDFLAGS += $(LDFLAGS)
+
 COMPILE_ARCH=ppc
 COMPILE_PLATFORM=xenon
 CROSS_COMPILING=1
@@ -30,6 +35,8 @@ USE_SVN=0
 USE_VOIP=0
 
 BUILD_GAME_SO=0
-BUILD_GAME_QVM=1
+BUILD_GAME_QVM=0
 BUILD_BASEGAME=1
 PLATFORM=XENON
+
+HAVE_VM_COMPILED=true
