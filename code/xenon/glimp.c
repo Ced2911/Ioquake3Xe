@@ -123,7 +123,7 @@ qboolean QGL_Init( const char *dllname ) {
 void		QGL_Shutdown( void ) {
 }
 
-#if 0
+#if 1
 // No SMP - stubs
 
 
