@@ -12,6 +12,7 @@ typedef unsigned int DWORD;
 #include "shaders/opengl.ps.texture.h"
 #include "shaders/opengl.vs.h"
 
+struct XenosSurface * frontbuffer = NULL;
 
 void XeGetScreenSize(int * width, int * height) {
 	*width = Xe_GetFramebufferSurface(xe)->width;
@@ -19,6 +20,7 @@ void XeGetScreenSize(int * width, int * height) {
 }
 
 void XenonGLInit(){
+	
 	// init video
 	xe=&_xe;
 	
@@ -35,6 +37,8 @@ void XenonGLInit(){
 			{XE_USAGE_COLOR, 0, XE_TYPE_UBYTE4},
 		}
 	};
+	
+	struct XenosSurface * fb = Xe_GetFramebufferSurface(xe);
 	
 	pPixelTextureShader = Xe_LoadShaderFromMemory(xe, (void*) g_xps_ps_texture);
 	Xe_InstantiateShader(xe, pPixelTextureShader, 0);
@@ -68,6 +72,10 @@ void XenonGLInit(){
 	// init matrices
 	XeGlInitializeMatrix(&projection_matrix);
 	XeGlInitializeMatrix(&modelview_matrix);
+	
+	frontbuffer = Xe_CreateTexture(xe, fb->width, fb->height, 0, XE_FMT_8888 | XE_FMT_BGRA, 1);
+	
+	//Xe_SetFrameBufferSurface(xe, frontbuffer);
 	
 	// init vertices
 	xe_NumVerts = 0;

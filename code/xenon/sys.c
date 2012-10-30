@@ -566,7 +566,7 @@ void Sys_PlatformInit( void )
 	xenon_make_it_faster(XENON_SPEED_FULL);
 	
 	http_output_start();
-	
+		
 #if 0
 	threading_init();
 	network_init_sys();

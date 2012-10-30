@@ -4,14 +4,9 @@
 #include <byteswap.h>
 #include <malloc.h>
 #include <debug.h>
+#include <xenos/xe.h>
 
-struct ati_info {
-    uint32_t unknown1[4];
-    uint32_t base;
-    uint32_t unknown2[8];
-    uint32_t width;
-    uint32_t height;
-} __attribute__((__packed__));
+extern struct XenosDevice *xe;
 
 struct file_buffer_t {
 	long offset;
@@ -32,10 +27,10 @@ static void png_mem_write(png_structp png_ptr, png_bytep data, png_size_t length
 }
 
 void screenCapture(unsigned char *dest, int * pnglen) {
-    struct ati_info *ai = (struct ati_info*) 0xec806100ULL;    
-    volatile unsigned int *screen = (unsigned int*) (long) (ai->base | 0x80000000);  
-    int width = ai->width;
-    int height = ai->height;
+    struct XenosSurface * framebuffer = Xe_GetFramebufferSurface(xe);
+    volatile unsigned int *screen = (unsigned int*)(framebuffer->base);  
+    int width = framebuffer->width;
+    int height = framebuffer->height;
 	struct file_buffer_t *file;
 	png_structp png_ptr_w;
 	png_infop info_ptr_w;
@@ -73,13 +68,9 @@ void screenCapture(unsigned char *dest, int * pnglen) {
         row_pointers[y] = (untiled_fb + y * width);
     }    
 
-	TR
-
     png_set_write_fn(png_ptr_w, (png_voidp *) file, png_mem_write, NULL);
     png_set_IHDR(png_ptr_w, info_ptr_w, width, height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 	png_write_info(png_ptr_w, info_ptr_w);
-
-TR
 
 	png_write_image(png_ptr_w, row_pointers);
 	/*
@@ -87,15 +78,11 @@ TR
     TR
     png_write_png(png_ptr_w, info_ptr_w, PNG_TRANSFORM_IDENTITY, 0);
     */ 
-    TR
     png_write_end(png_ptr_w, info_ptr_w);
-    TR
     png_destroy_write_struct(&png_ptr_w, &info_ptr_w);
-  
-  TR
-    
+      
     *pnglen = file->offset;
-TR    
+    
 	memcpy(dest, data, sizeof(int) * width * height);
 	free(row_pointers);
     free(file);
