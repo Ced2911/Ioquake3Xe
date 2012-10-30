@@ -13,11 +13,6 @@ struct file_buffer_t {
 	unsigned char * data;
 };
 
-static unsigned int * untiled_fb = NULL;
-
-static void initBuffer() {
-	untiled_fb = (unsigned int*)malloc(10 * 1024 * 1024);
-}
 static void png_mem_write(png_structp png_ptr, png_bytep data, png_size_t length) {
 	struct file_buffer_t *dst = (struct file_buffer_t *) png_get_io_ptr(png_ptr);
 	/* Copy data from image buffer */
@@ -28,10 +23,11 @@ static void png_mem_write(png_structp png_ptr, png_bytep data, png_size_t length
 
 void screenCapture(unsigned char *dest, int * pnglen) {
     struct XenosSurface * framebuffer = Xe_GetFramebufferSurface(xe);
-    volatile unsigned int *screen = (unsigned int*)(framebuffer->base);  
+    volatile unsigned int *screen = (unsigned int*)(((long)framebuffer->base)|0x80000000ULL);
     int width = framebuffer->width;
     int height = framebuffer->height;
 	struct file_buffer_t *file;
+	unsigned int * untiled_fb;
 	png_structp png_ptr_w;
 	png_infop info_ptr_w;
 	png_bytepp row_pointers = NULL;
@@ -48,13 +44,11 @@ void screenCapture(unsigned char *dest, int * pnglen) {
 		return;
 	}
 	
-	if (untiled_fb==NULL)
-		initBuffer();
+	untiled_fb = (unsigned int*)malloc(10 * 1024 * 1024);
 	
 	file = (struct file_buffer_t *) malloc(sizeof (struct file_buffer_t));
 	file->offset = 0;
-	file->data = data;
-	
+	file->data = data;	
 
     row_pointers = (png_bytepp)malloc(sizeof(png_bytep) * height);
 
@@ -67,11 +61,11 @@ void screenCapture(unsigned char *dest, int * pnglen) {
         }
         row_pointers[y] = (untiled_fb + y * width);
     }    
-
+TR
     png_set_write_fn(png_ptr_w, (png_voidp *) file, png_mem_write, NULL);
     png_set_IHDR(png_ptr_w, info_ptr_w, width, height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 	png_write_info(png_ptr_w, info_ptr_w);
-
+TR
 	png_write_image(png_ptr_w, row_pointers);
 	/*
     png_set_rows(png_ptr_w, info_ptr_w, row_pointers);
@@ -80,11 +74,12 @@ void screenCapture(unsigned char *dest, int * pnglen) {
     */ 
     png_write_end(png_ptr_w, info_ptr_w);
     png_destroy_write_struct(&png_ptr_w, &info_ptr_w);
-      
+      TR
     *pnglen = file->offset;
-    
+    TR
 	memcpy(dest, data, sizeof(int) * width * height);
 	free(row_pointers);
+	free(untiled_fb);
     free(file);
     free(data);
 }

@@ -75,7 +75,7 @@ void XenonGLInit(){
 	
 	frontbuffer = Xe_CreateTexture(xe, fb->width, fb->height, 0, XE_FMT_8888 | XE_FMT_BGRA, 1);
 	
-	//Xe_SetFrameBufferSurface(xe, frontbuffer);
+	Xe_SetFrameBufferSurface(xe, frontbuffer);
 	
 	// init vertices
 	xe_NumVerts = 0;
