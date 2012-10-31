@@ -80,7 +80,7 @@ void XenonGLInit(){
 	// init vertices
 	xe_NumVerts = 0;
 	xe_NumIndices = 0;
-	xe_CurrentColor.u32 = 0xFFFFFFFF;
+	xe_CurrentColor.u32 = 0x0;
 	
 	// init textures
 	XeGLInitTextures();
@@ -121,7 +121,7 @@ void XenonGLDisplay()
     xe_Vertices = Xe_VB_Lock(xe, pVbGL, 0, xe_NumVerts * sizeof(glVerticesFormat_t), XE_LOCK_WRITE);
 	Xe_VB_Unlock(xe, pVbGL);
 	
-	xe_indices = Xe_IB_Lock(xe, pIbGL, 0, xe_NumIndices, XE_LOCK_WRITE);
+	xe_indices = Xe_IB_Lock(xe, pIbGL, 0, xe_NumIndices * sizeof(short), XE_LOCK_WRITE);
 	Xe_IB_Unlock(xe, pIbGL); 
     
     // Resolve
@@ -162,6 +162,9 @@ void XenonEndGl()
     xe_Vertices = Xe_VB_Lock(xe, pVbGL, 0, xe_NumVerts * sizeof(glVerticesFormat_t), XE_LOCK_WRITE);
 	Xe_VB_Unlock(xe, pVbGL);
 	
+	xe_indices = Xe_IB_Lock(xe, pIbGL, 0, xe_NumIndices * sizeof(short), XE_LOCK_WRITE);
+	Xe_IB_Unlock(xe, pIbGL); 
+	
 	// Resolve
     Xe_Resolve(xe);
     
@@ -169,6 +172,7 @@ void XenonEndGl()
 	
 	// Reset vertices
     xe_NumVerts = xe_PrevNumVerts = 0;
+    xe_NumIndices = xe_PrevNumIndices = 0;
  
 	ShowFPS();
 }

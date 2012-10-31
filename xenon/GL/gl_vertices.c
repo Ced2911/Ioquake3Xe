@@ -133,7 +133,7 @@ void GL_InitShaderCache() {
 }
 
 // GL_TEXTURE_ENV_MODE defaults to GL_MODULATE
-static void GL_SelectShaders() {
+void GL_SelectShaders() {
 	int i = 0;
 	pixel_shader_pipeline_t shader;
 	shader.hash = 0;
@@ -178,14 +178,26 @@ static void GL_SelectShaders() {
 }
 
 
+void GL_SelectTextures() {
+	 int i = 0;
+    // setup texture    
+    for(i=0; i<XE_MAX_TMUS; i++) {    
+		// set texture
+		if (xeTmus[i].enabled && xeTmus[i].boundtexture) {
+			Xe_SetTexture(xe, i, xeTmus[i].boundtexture->teximg);
+		}
+		else {
+			Xe_SetTexture(xe, i, NULL);
+		}
+	}
+}
+
 static void GL_SubmitVertexes()
 {	
-	/*
 	// never draw this one
 	if (gl_cull_mode == GL_FRONT_AND_BACK)
 		return;
-	*/
-	// Xe_SetFillMode(xe, XE_FILL_WIREFRAME, XE_FILL_WIREFRAME);
+	//Xe_SetFillMode(xe, XE_FILL_WIREFRAME, XE_FILL_WIREFRAME);
 		
 	// update states if dirty
 	XeUpdateStates();
@@ -197,19 +209,10 @@ static void GL_SubmitVertexes()
     // Xe_SetStreamSource(xe, 0, pVbGL, xe_PrevNumVerts * sizeof(glVerticesFormat_t), 10);
     Xe_SetShader(xe, SHADER_TYPE_VERTEX, pVertexShader, 0);
     
-    int i = 0;
-    // setup texture    
-    for(i=0; i<XE_MAX_TMUS; i++) {    
-		// set texture
-		if (xeTmus[i].enabled && xeTmus[i].boundtexture) {
-			Xe_SetTexture(xe, i, xeTmus[i].boundtexture->teximg);
-		}
-		else {
-			Xe_SetTexture(xe, i, NULL);
-		}
-	}
-	// setup shaders
+   
+	// setup shaders and textures
 	GL_SelectShaders();
+	GL_SelectTextures();
 	
 	// draw
 	if (use_indice_buffer == 0)
@@ -220,9 +223,16 @@ static void GL_SubmitVertexes()
 	else {
 		/* Xe_DrawIndexedPrimitive(struct XenosDevice *xe, int type, int base_index, int min_index, int num_vertices, int start_index, int primitive_count) */
 		Xe_SetIndices(xe, pIbGL);
+		
 		Xe_DrawIndexedPrimitive(xe, Gl_Prim_2_Xe_Prim(xe_PrimitiveMode), 
-		xe_PrevNumVerts, 0,
-		(xe_NumVerts - xe_PrevNumVerts), xe_PrevNumIndices, Gl_Prim_2_Size(xe_PrimitiveMode, (xe_NumIndices - xe_PrevNumIndices)));
+		0, 0,
+		(xe_NumVerts - xe_PrevNumVerts), xe_PrevNumIndices, (xe_NumIndices - xe_PrevNumIndices));
+		
+		/*
+		Xe_DrawIndexedPrimitive(xe,XE_PRIMTYPE_TRIANGLELIST, 
+		0, 0,
+		(xe_NumVerts - xe_PrevNumVerts), xe_PrevNumIndices, 2);
+		*/ 
 	}
 	
 	//printBlendValue();
@@ -241,6 +251,7 @@ void glEnd()
 	// submit vertices
 	GL_SubmitVertexes();
 	use_indice_buffer = 0;
+	xe_CurrentColor.u32 = 0;
 };
 
 
@@ -395,9 +406,10 @@ void glDrawBuffer (GLenum mode)
  
 void glArrayElement(GLint i)
 {
-	TR
 	use_indice_buffer = 1;	
-	*xe_indices++ = i + xe_PrevNumVerts;
+	//*xe_indices++ = i + xe_PrevNumVerts;
+	*xe_indices++ = i + xe_NumVerts;
+	xe_NumIndices++;
 }
 
 
@@ -492,7 +504,7 @@ void glUnlockArraysEXT(void) {
 
 void glDrawElements(GLenum mode, GLsizei indice_count,	GLenum type, const GLvoid *	indices)
 {
-	#if 0
+	#if 1
 	int i;
 	int vertice_count = vertexPointer.count;
 	unsigned short * current_indice;

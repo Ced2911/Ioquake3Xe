@@ -16,7 +16,24 @@ glXeSurface_t * glXeSurfaces = NULL;
 
 static struct XenosSurface * MyXeCreateTexture(struct XenosDevice *xe, unsigned int width, unsigned int height, unsigned int levels, int format, int tiled)
 {
-	return Xe_CreateTexture(xe, width, height, levels, format, tiled);
+	/*
+	int nwidth = width;
+	int nheight = height;
+	if (width < TEXMIN || height < TEXMIN) {
+		while(nwidth<TEXMIN)
+			nwidth>>=1;
+		while(nheight<TEXMIN)
+			nheight>>=1;
+	}
+	*/
+	struct XenosSurface * surf = Xe_CreateTexture(xe, width, height, levels, format, tiled);
+	/*
+	surf->width = width;
+	surf->height = height;
+	*/
+	
+	memset(surf->base, 0xFF, surf->hpitch * surf->wpitch);
+	return surf;
 }
 
 static void * MyXeSurfaceLockRect(struct XenosDevice *xe, struct XenosSurface *surface, int x, int y, int w, int h, int flags)
@@ -700,6 +717,20 @@ void glTexParameterfv(	GLenum  	target,
 	TR
 }
 
+static int glWrapToXe(int param) {
+	switch (param) {
+		case GL_CLAMP_TO_EDGE:
+			return XE_TEXADDR_CLAMP;
+		case GL_CLAMP_TO_BORDER:
+			return XE_TEXADDR_BORDER;
+		case GL_MIRRORED_REPEAT:
+			return XE_TEXADDR_MIRROR;
+		case GL_REPEAT:
+		default:
+			return XE_TEXADDR_WRAP;
+	}
+}
+
 
 void glTexParameterf (GLenum target, GLenum pname, GLfloat param)
 {
@@ -716,33 +747,27 @@ void glTexParameterf (GLenum target, GLenum pname, GLfloat param)
 		if ((int) param == GL_NEAREST_MIPMAP_NEAREST)
 		{
 			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_POINT;
-			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_POINT;
 		}
 		else if ((int) param == GL_LINEAR_MIPMAP_NEAREST)
 		{
 			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_LINEAR;
-			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_POINT;
 		}
 		else if ((int) param == GL_NEAREST_MIPMAP_LINEAR)
 		{
 			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_POINT;
-			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_LINEAR;
 		}
 		else if ((int) param == GL_LINEAR_MIPMAP_LINEAR)
 		{
-			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_LINEAR;
 			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_LINEAR;
 		}
 		else if ((int) param == GL_LINEAR)
 		{
 			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_LINEAR;
-			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_NONE;
 		}
 		else
 		{
 			// GL_NEAREST
 			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_POINT;
-			xeTmus[xeCurrentTMU].boundtexture->teximg->use_filtering = XE_TEXF_NONE;
 		}
 		break;
 
@@ -753,15 +778,11 @@ void glTexParameterf (GLenum target, GLenum pname, GLfloat param)
 		break;
 #endif
 	case GL_TEXTURE_WRAP_S:
-		if ((int) param == GL_CLAMP)
-			xeTmus[xeCurrentTMU].boundtexture->teximg->u_addressing = XE_TEXADDR_CLAMP;
-		else xeTmus[xeCurrentTMU].boundtexture->teximg->u_addressing = XE_TEXADDR_WRAP;
+		xeTmus[xeCurrentTMU].boundtexture->teximg->u_addressing = glWrapToXe((int) param);
 		break;
 
 	case GL_TEXTURE_WRAP_T:
-		if ((int) param == GL_CLAMP)
-			xeTmus[xeCurrentTMU].boundtexture->teximg->v_addressing = XE_TEXADDR_CLAMP;
-		else xeTmus[xeCurrentTMU].boundtexture->teximg->v_addressing = XE_TEXADDR_WRAP;
+		xeTmus[xeCurrentTMU].boundtexture->teximg->v_addressing = glWrapToXe((int) param);
 		break;
 
 	default:
@@ -777,7 +798,7 @@ void glTexParameteri (GLenum target, GLenum pname, GLint param)
 
 void glGetTexParameterfv (GLenum target, GLenum pname, GLfloat *params)
 {
-	
+	TR
 }
 
 

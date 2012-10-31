@@ -57,7 +57,7 @@ void GLimp_Init( void )
 	gl_initilised = 1;
 		
 	glConfig.textureCompression = TC_NONE;
-	glConfig.textureEnvAddAvailable = qfalse;
+	glConfig.textureEnvAddAvailable = qtrue;
 	
 	 // This values force the UI to disable driver selection
 	glConfig.driverType = GLDRV_ICD;
@@ -98,10 +98,10 @@ void GLimp_Init( void )
 	IN_Init( );
 }
 
-void		GLimp_Shutdown( void ) {
+void GLimp_Shutdown( void ) {
 }
 
-void		GLimp_EnableLogging( qboolean enable ) {
+void GLimp_EnableLogging( qboolean enable ) {
 }
 
 void GLimp_LogComment( char *comment ) {
@@ -113,9 +113,8 @@ qboolean QGL_Init( const char *dllname ) {
 	qwglSwapIntervalEXT = NULL;
 	qglMultiTexCoord2fARB = glMultiTexCoord2f;
 	qglClientActiveTextureARB = qglActiveTextureARB = glActiveTexture;
-	qglClientActiveTextureARB = NULL;
-	qglLockArraysEXT = NULL;
-	qglUnlockArraysEXT = NULL;
+	qglLockArraysEXT = glLockArraysEXT;
+	qglUnlockArraysEXT = glUnlockArraysEXT;
 	
 	return qtrue;
 }
@@ -226,3 +225,4 @@ void GLimp_Minimize(void)
 	
 }
 #endif
+

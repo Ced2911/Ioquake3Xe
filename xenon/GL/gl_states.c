@@ -572,8 +572,8 @@ void XeUpdateStates() {
 		float zn = xe_state.viewport_zn;
 		float zf = xe_state.viewport_zf;
 		if (xe_state.polygon_offset_enabled) {
-			zn -= zoffset_bias * xe_state.zoffset;
-			zf -= zoffset_bias * xe_state.zoffset;
+			zn += zoffset_bias * xe_state.zoffset;
+			zf += zoffset_bias * xe_state.zoffset;
 		}
 		Xe_SetViewport(xe, 0, 0, xe_state.viewport_w, xe_state.viewport_h, zn, zf);
 

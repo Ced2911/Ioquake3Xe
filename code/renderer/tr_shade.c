@@ -171,6 +171,10 @@ without compiled vertex arrays.
 #define qglTexCoordPointer XeTexPointer
 #define qglVertexPointer XeVertPointer
 
+void GL_SelectTextures();
+void GL_SelectShaders();
+void XeUpdateStates();
+
 /** 16 for vertice in general **/
 static int vertice_stride;
 static int vertice_nbr;
@@ -232,58 +236,56 @@ static void R_DrawElementsXenon( int numIndexes, const glIndex_t *indexes )
 		float * v = (float*) vertice_ptr;
 		float * t = (float*) texcoords_ptr;
 		unsigned char * c = (unsigned char*) color_ptr;
-		//color.u32 = COLOR_ARGB(c[0], c[1], c[2], c[3]);
-		color.u32 = 0xFFFFFFFF;
+		color.u32 = COLOR_ARGB(c[0], c[1], c[2], c[3]);
+		//color.u32 = 0xFFFFFFFF;
 		
 		*xe_Vertices++ = v[0];
 		*xe_Vertices++ = v[1];
 		*xe_Vertices++ = v[2];
 		*xe_Vertices++ = 1;
 		
-		*xe_Vertices++ = v[0];
-		*xe_Vertices++ = v[1];
+		*xe_Vertices++ = t[0];
+		*xe_Vertices++ = t[1];
 		
-		*xe_Vertices++ = v[0];
-		*xe_Vertices++ = v[1];
+		*xe_Vertices++ = t[0];
+		*xe_Vertices++ = t[1];
 		
-		*xe_Vertices++ = color.f;
-		
+		*xe_Vertices++ = color.f;		
 		
 		vertice_ptr += vertice_stride;
 		texcoords_ptr += 2 * sizeof(float);
 		color_ptr += 4 * sizeof(char);
-		
-		//printf("xyz: %f - %f - %f\n", v[0], v[1], v[2]);
-		
+				
 		xe_NumVerts++;
 	}
 	
 	// indices
 	for (i = 0 ; i < numIndexes ; i++) {
-		//printf("i: %d\n", indexes[i] + xe_PrevNumVerts);
 		*xe_indices++ = indexes[i] + xe_PrevNumVerts;
 		xe_NumIndices++;
 	}
 	
+	
+	XeUpdateStates();
+	XeGlCheckDirtyMatrix(&projection_matrix);
+	XeGlCheckDirtyMatrix(&modelview_matrix);
+	
+	// setup shaders and textures
 	Xe_SetShader(xe, SHADER_TYPE_VERTEX, pVertexShader, 0);
-	Xe_SetShader(xe, SHADER_TYPE_PIXEL, pPixelColorShader, 0);
+	GL_SelectShaders();
+	GL_SelectTextures();
 	
 	Xe_SetIndices(xe, pIbGL);
 	Xe_SetStreamSource(xe, 0, pVbGL, 0, 10);
-	
-	
-	//printf("Xe_DrawIndexedPrimitive %d %d %d %d %d\n", xe_PrevNumVerts, 0, vertice_nbr, xe_PrevNumIndices, (xe_NumIndices - xe_PrevNumIndices)/3);
-	// End
-	/*
+		
 	Xe_DrawIndexedPrimitive(
 		xe, 
 		XE_PRIMTYPE_TRIANGLELIST, 
-		xe_PrevNumVerts, 0,
+		0, 0,
 		vertice_nbr, 
 		xe_PrevNumIndices, 
-		(xe_NumIndices - xe_PrevNumIndices)/3
+		numIndexes/3
 	);
-	**/
 	
 	//Xe_DrawPrimitive(xe, XE_PRIMTYPE_TRIANGLELIST, xe_PrevNumVerts, (xe_NumVerts - xe_PrevNumVerts)/3);
 #endif	
@@ -304,7 +306,7 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 	primitives = r_primitives->integer;
 	
 	// XENON TMP
-	primitives = 3;
+	primitives = 4;
 
 	// default is to use triangles if compiled vertex arrays are present
 	if ( primitives == 0 ) {

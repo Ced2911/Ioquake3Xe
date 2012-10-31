@@ -2430,6 +2430,9 @@ void D3D_ResetMode (int width, int height, int bpp, BOOL windowed);
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
 #define GL_MAX_TEXTURE_UNITS_ARB 0x84E2
 
+#define GL_CLAMP_TO_BORDER 0x812d
+#define GL_MIRRORED_REPEAT 0x8370
+
 void glActiveTexture(GLenum texture);
 void glMultiTexCoord1f(GLenum target, GLfloat s);
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
