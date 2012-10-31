@@ -154,7 +154,7 @@ static void R_DrawStripElements( int numIndexes, const glIndex_t *indexes, void 
 
 	qglEnd();
 }
-
+#if 0
 
 /*
 ==================
@@ -217,7 +217,7 @@ static void XeVertPointer(GLint size, GLenum type, GLsizei stride, const GLvoid 
 
 static void R_DrawElementsXenon( int numIndexes, const glIndex_t *indexes )
 {
-#if 1
+#if 0
 	int i = 0;
 	
 	union {
@@ -228,8 +228,6 @@ static void R_DrawElementsXenon( int numIndexes, const glIndex_t *indexes )
 	// Begin
 	xe_PrevNumVerts = xe_NumVerts;
 	xe_PrevNumIndices = xe_NumIndices;
-	
-	//printf("\n\nnew batch\n");
 	
 	// vertices
 	for (i = 0 ; i < vertice_nbr ; i++) {
@@ -291,6 +289,8 @@ static void R_DrawElementsXenon( int numIndexes, const glIndex_t *indexes )
 #endif	
 }
 
+#endif
+
 /*
 ==================
 R_DrawElements
@@ -306,7 +306,7 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 	primitives = r_primitives->integer;
 	
 	// XENON TMP
-	primitives = 4;
+	primitives = 2;
 
 	// default is to use triangles if compiled vertex arrays are present
 	if ( primitives == 0 ) {
@@ -315,11 +315,6 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 		} else {
 			primitives = 1;
 		}
-	}
-
-	if ( primitives == 4) {
-		R_DrawElementsXenon( numIndexes, indexes);
-		return;
 	}
 
 	if ( primitives == 2 ) {

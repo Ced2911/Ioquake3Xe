@@ -461,111 +461,91 @@ void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *poin
 }
 
 void glLockArraysEXT(int first, int count) {
-	#if 0
-	unsigned char * current_vertice;
-	unsigned char * current_textcoord;
-	unsigned char * current_color;
-	int i;
-	int vertice_count = vertexPointer.count;
 	vertexPointer.count = count;
-	
-	// Begin
-	xe_PrevNumVerts = xe_NumVerts;
-	
-	// Fill vertices		
-	current_vertice = (unsigned char *) vertexPointer.pointer;
-	current_textcoord = (unsigned char *) texCoordPointer[vArray_TMU].pointer;
-	current_color = (unsigned char *) colorPointer.pointer;
-	
-	for(i=0; i<vertice_count; i++) {
-		/*
-		if (current_color) {
-			glColor4ubv((GLfloat*)current_color);
-		}
-		
-		if (current_textcoord) {
-			glTexCoord2fv((GLfloat*)current_textcoord);
-		}
-		*/
-		glVertex3fv((GLfloat*)current_vertice);
-		
-		current_vertice+=vertexPointer.stride;
-		/*
-		current_textcoord+=texCoordPointer[vArray_TMU].stride;
-		current_color+=colorPointer.stride;
-		*/ 
-	}
-	#endif
 }
 
 void glUnlockArraysEXT(void) {
-	
+	// nothing
 }
 
-void glDrawElements(GLenum mode, GLsizei indice_count,	GLenum type, const GLvoid *	indices)
+#define COLOR_ARGB(a,b,g,r) ((unsigned int)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
+
+/**
+ * mode / type
+ **/ 
+void glDrawElements(GLenum mode, GLsizei numIndexes, GLenum type, const GLvoid * indices)
 {
-	#if 1
-	int i;
-	int vertice_count = vertexPointer.count;
-	unsigned short * current_indice;
+	int i = 0;
 	
-	if ( vertexPointer.pointer == NULL || indices== NULL ) {
-		// no vertice, no indices leave
-		return;
-	}
+	union {
+		float f;
+		unsigned int u32;
+	} color;
 	
 	// Begin
-	// xe_PrevNumVerts = xe_NumVerts;
+	xe_PrevNumVerts = xe_NumVerts;
 	xe_PrevNumIndices = xe_NumIndices;
 	
-	// add indices info
-	indexPointer.mode = mode;
-	indexPointer.type = type;
-	indexPointer.pointer = (GLvoid *) indices;
+	unsigned int * indexes = (unsigned int*)indices;
+	void * vertice_ptr = vertexPointer.pointer;
+	void * color_ptr = colorPointer.pointer;
+	void * texcoords_ptr = texCoordPointer[vArray_TMU].pointer;
 	
-	// Debugging
-	Xe_SetFillMode(xe, XE_FILL_WIREFRAME, XE_FILL_WIREFRAME);
+	// vertices
+	for (i = 0 ; i < vertexPointer.count ; i++) {
+		float * v = (float*) vertice_ptr;
+		float * t = (float*) texcoords_ptr;
+		unsigned char * c = (unsigned char*) color_ptr;
+		color.u32 = COLOR_ARGB(c[0], c[1], c[2], c[3]);
+		//color.u32 = 0xFFFFFFFF;
 		
-	// update states if dirty
+		*xe_Vertices++ = v[0];
+		*xe_Vertices++ = v[1];
+		*xe_Vertices++ = v[2];
+		*xe_Vertices++ = 1;
+		
+		*xe_Vertices++ = t[0];
+		*xe_Vertices++ = t[1];
+		
+		*xe_Vertices++ = t[0];
+		*xe_Vertices++ = t[1];
+		
+		*xe_Vertices++ = color.f;		
+		
+		vertice_ptr += vertexPointer.stride;
+		texcoords_ptr += 2 * sizeof(float);
+		color_ptr += 4 * sizeof(char);
+				
+		xe_NumVerts++;
+	}
+	
+	// indices
+	for (i = 0 ; i < numIndexes ; i++) {
+		*xe_indices++ = indexes[i] + xe_PrevNumVerts;
+		xe_NumIndices++;
+	}
+	
+	
 	XeUpdateStates();
-
-	// update if dirty
 	XeGlCheckDirtyMatrix(&projection_matrix);
 	XeGlCheckDirtyMatrix(&modelview_matrix);
 	
-    // Xe_SetStreamSource(xe, 0, pVbGL, xe_PrevNumVerts * sizeof(glVerticesFormat_t), 10);
-    Xe_SetShader(xe, SHADER_TYPE_VERTEX, pVertexShader, 0);
-    
-    // setup texture    
-    for(i=0; i<XE_MAX_TMUS; i++) {    
-		// set texture
-		if (xeTmus[i].enabled && xeTmus[i].boundtexture) {
-			Xe_SetTexture(xe, i, xeTmus[i].boundtexture->teximg);
-		}
-		else {
-			Xe_SetTexture(xe, i, NULL);
-		}
-	}
-	// setup shaders
-	GL_SelectShaders();	
-		
-	// Fill indices
-	current_indice = (unsigned short *) indexPointer.pointer;	
-	for(i=0; i < indice_count; i++) {
-		xe_indices[i+xe_PrevNumIndices] = xe_PrevNumVerts + current_indice[i];
-	}
-	xe_NumIndices += indice_count;
+	// setup shaders and textures
+	Xe_SetShader(xe, SHADER_TYPE_VERTEX, pVertexShader, 0);
+	GL_SelectShaders();
+	GL_SelectTextures();
 	
-	
-	// draw
-	/* Xe_DrawIndexedPrimitive(struct XenosDevice *xe, int type, int base_index, int min_index, int num_vertices, int start_index, int primitive_count) */
 	Xe_SetIndices(xe, pIbGL);
-	
-	Xe_DrawIndexedPrimitive(xe, XE_PRIMTYPE_TRIANGLELIST, 
-		xe_PrevNumVerts, 0,
-		vertice_count, xe_PrevNumIndices, (indice_count / 3)
+	Xe_SetStreamSource(xe, 0, pVbGL, 0, 10);
+		
+	Xe_DrawIndexedPrimitive(
+		xe, 
+		XE_PRIMTYPE_TRIANGLELIST, 
+		0, 0,
+		vertexPointer.count, 
+		xe_PrevNumIndices, 
+		numIndexes/3
 	);
-	#endif
 }
 
 void glDrawArrays (GLenum mode, GLint first, GLsizei count)
