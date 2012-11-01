@@ -16,23 +16,22 @@ glXeSurface_t * glXeSurfaces = NULL;
 
 static struct XenosSurface * MyXeCreateTexture(struct XenosDevice *xe, unsigned int width, unsigned int height, unsigned int levels, int format, int tiled)
 {
-	/*
 	int nwidth = width;
 	int nheight = height;
+	/*
 	if (width < TEXMIN || height < TEXMIN) {
 		while(nwidth<TEXMIN)
-			nwidth>>=1;
+			nwidth<<=1;
 		while(nheight<TEXMIN)
-			nheight>>=1;
+			nheight<<=1;
 	}
-	*/
-	struct XenosSurface * surf = Xe_CreateTexture(xe, width, height, levels, format, tiled);
-	/*
+	*/ 
+	struct XenosSurface * surf = Xe_CreateTexture(xe, nwidth, nheight, levels, format, tiled);
+/*
 	surf->width = width;
 	surf->height = height;
 	*/
-	
-	memset(surf->base, 0xFF, surf->hpitch * surf->wpitch);
+	memset(surf->base, 0x00, surf->hpitch * surf->wpitch);
 	return surf;
 }
 

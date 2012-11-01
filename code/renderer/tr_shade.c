@@ -193,7 +193,6 @@ static void XeLockArrays(int first, int count)
 	vertice_nbr = count;
 }
 
-
 static void XeColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *	pointer)
 {
 	color_ptr = pointer;

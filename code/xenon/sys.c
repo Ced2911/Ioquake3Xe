@@ -563,7 +563,10 @@ void Sys_PlatformInit( void )
 	// Init libxenon
 	xenos_init(VIDEO_MODE_AUTO);
 
+	console_init();
+
 	xenon_make_it_faster(XENON_SPEED_FULL);
+	
 	
 	http_output_start();
 		
@@ -588,6 +591,8 @@ void Sys_PlatformInit( void )
 	ListDevices();
 	
 	Sys_SetEnv("HOME", "uda:/");
+	
+	console_close();
 }
 
 /*
@@ -648,7 +653,7 @@ CON_Shutdown
 */
 void CON_Shutdown( void )
 {
-	console_close();
+	//console_close();
 }
 
 /*
@@ -658,7 +663,7 @@ CON_Init
 */
 void CON_Init( void )
 {
-	console_init();
+	//console_init();
 }
 
 /*

@@ -468,7 +468,7 @@ void glUnlockArraysEXT(void) {
 	// nothing
 }
 
-#define COLOR_ARGB(a,b,g,r) ((unsigned int)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
+#define COLOR_ARGB(a,r,g,b) ((unsigned int)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
 
 /**
  * mode / type
@@ -496,7 +496,7 @@ void glDrawElements(GLenum mode, GLsizei numIndexes, GLenum type, const GLvoid *
 		float * v = (float*) vertice_ptr;
 		float * t = (float*) texcoords_ptr;
 		unsigned char * c = (unsigned char*) color_ptr;
-		color.u32 = COLOR_ARGB(c[0], c[1], c[2], c[3]);
+		color.u32 = COLOR_ARGB(c[3], c[2], c[1], c[0]);
 		//color.u32 = 0xFFFFFFFF;
 		
 		*xe_Vertices++ = v[0];
