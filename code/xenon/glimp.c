@@ -84,7 +84,6 @@ void GLimp_Init( void )
 	glConfig.stencilBits = 8;
 	*/
 	
-
 	// todo
 	glConfig.numTextureUnits = 1;
 	
