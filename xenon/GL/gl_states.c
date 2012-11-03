@@ -443,13 +443,11 @@ void glReadPixels(GLint x,	GLint y, GLsizei width,	GLsizei height,	GLenum format
 
 void glGetBooleanv(	GLenum pname, GLboolean * params)
 {
-	 TR
 	 glGetIntegerv(pname, (GLint *)params);
 }
 
 void glGetDoublev(GLenum pname,	GLdouble * params)
 {
-	TR
 	glGetIntegerv(pname, (GLint *)params);
 }
 

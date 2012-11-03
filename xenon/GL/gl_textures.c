@@ -185,6 +185,7 @@ void glTexEnvf (GLenum target, GLenum pname, GLfloat param)
 	
 	if (!xeTmus[xeCurrentTMU].boundtexture) return;
 	if (!xeTmus[xeCurrentTMU].boundtexture->teximg ) return;
+	
 	/** Do shader work here !! **/
 	switch (pname)
 	{
@@ -192,11 +193,23 @@ void glTexEnvf (GLenum target, GLenum pname, GLfloat param)
 			switch ((GLint)param)
 			{
 				case GL_REPLACE:
-					xeTmus[xeCurrentTMU].texture_env_mode = (int)GL_REPLACE;
+					xeTmus[xeCurrentTMU].texture_env_mode = GL_REPLACE;
 					break;
 
 				case GL_MODULATE:
-					xeTmus[xeCurrentTMU].texture_env_mode = (int)GL_MODULATE;			
+					xeTmus[xeCurrentTMU].texture_env_mode = GL_MODULATE;			
+					break;
+					
+				case GL_BLEND:
+					xeTmus[xeCurrentTMU].texture_env_mode = GL_BLEND;
+					break;
+
+				case GL_DECAL:
+					xeTmus[xeCurrentTMU].texture_env_mode = GL_DECAL;			
+					break;
+
+				case GL_ADD:
+					xeTmus[xeCurrentTMU].texture_env_mode = GL_ADD;			
 					break;
 				
 				default:
@@ -657,7 +670,7 @@ void glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, GLvo
  * 
  ***********************************************************************/
 
-static int getTmu(GLenum texture)
+int xeGetTmu(GLenum texture)
 {
 	switch(texture) {
 		case 0:
@@ -676,26 +689,26 @@ static int getTmu(GLenum texture)
 			*/
 		default:
 			TR
-			printf("%x\n", texture);
+			printf("xeGetTmu %x\n", texture);
 			return 0;
 	}
 }
 
 void glActiveTexture(GLenum texture)
 {
-	xeCurrentTMU = getTmu(texture);
+	xeCurrentTMU = xeGetTmu(texture);
 }
 
 void glMultiTexCoord1f(GLenum target, GLfloat s)
 {
-	int tmu = getTmu(target);
+	int tmu = xeGetTmu(target);
 	xe_TextCoord[tmu].u = s;
 	xe_TextCoord[tmu].v = 0;
 }
 
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t)
 {
-	int tmu = getTmu(target);
+	int tmu = xeGetTmu(target);
 	xe_TextCoord[tmu].u = s;
 	xe_TextCoord[tmu].v = t;
 }

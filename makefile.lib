@@ -121,6 +121,7 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
+	rm ./build/release-XENON-ppc/xenon/glimp.o # force recompile of q3
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/makefile.lib
 
 #---------------------------------------------------------------------------------

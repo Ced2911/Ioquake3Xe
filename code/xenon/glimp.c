@@ -37,6 +37,7 @@ void ( * qglClientActiveTextureARB )( GLenum texture );
 
 void ( * qglLockArraysEXT)( int, int);
 void ( * qglUnlockArraysEXT) ( void );
+void glClientActiveTexture(GLenum texture);
 
 void GLimp_EndFrame( void ) {	
 	// don't flip if drawing to front buffer
@@ -92,7 +93,8 @@ void GLimp_Init( void )
 	qglMultiTexCoord2fARB = glMultiTexCoord2f;
 	
 	// not working
-	// qglClientActiveTextureARB = qglActiveTextureARB = glActiveTexture;
+	qglClientActiveTextureARB = glClientActiveTexture;
+	qglActiveTextureARB = glActiveTexture;
 	
 	IN_Init( );
 }
@@ -111,7 +113,10 @@ qboolean QGL_Init( const char *dllname ) {
 	
 	qwglSwapIntervalEXT = NULL;
 	qglMultiTexCoord2fARB = glMultiTexCoord2f;
-	qglClientActiveTextureARB = qglActiveTextureARB = glActiveTexture;
+	
+	qglClientActiveTextureARB = glClientActiveTexture;
+	qglActiveTextureARB = glActiveTexture;
+	
 	qglLockArraysEXT = glLockArraysEXT;
 	qglUnlockArraysEXT = glUnlockArraysEXT;
 	

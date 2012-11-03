@@ -41,7 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 enum XE_BUTTONS {
 	XE_BTN_UP, XE_BTN_DOWN, XE_BTN_LEFT, XE_BTN_RIGHT,
 	XE_BTN_A, XE_BTN_B, XE_BTN_X, XE_BTN_Y,
-	XE_BTN_START, XE_BTN_BACK,
+	XE_BTN_START, XE_BTN_BACK, XE_BTN_LOGO,
 	XE_BTN_RB, XE_BTN_LB,
 	XE_BTN_RT, XE_BTN_LT,
 	XE_BTN_S1Z, XE_BTN_S2Z,
@@ -73,7 +73,7 @@ static void IN_InitJoystick( void ) {
 	
 	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_ARCHIVE|CVAR_LATCH );
 	in_joystickDebug = Cvar_Get( "in_joystickDebug", "1", CVAR_TEMP );
-	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.15", CVAR_ARCHIVE );
+	in_joystickThreshold = Cvar_Get( "joy_threshold", "0.35", CVAR_ARCHIVE );
 	in_joystickUseAnalog = Cvar_Get( "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
 	
 	Com_DPrintf( "Joystickopened\n");
@@ -86,14 +86,23 @@ static void IN_InitJoystick( void ) {
 	Key_SetBinding(K_JOY1 + XE_BTN_RIGHT, "weapnext");
 		
 	// ABXY
-	Key_SetBinding(K_JOY1 + XE_BTN_A, "+attack");
-	Key_SetBinding(K_JOY1 + XE_BTN_B, "+strafe");
+	Key_SetBinding(K_JOY1 + XE_BTN_A, "+moveup");
+	Key_SetBinding(K_JOY1 + XE_BTN_B, "+movedown");
 	Key_SetBinding(K_JOY1 + XE_BTN_X, "weapprev");
 	Key_SetBinding(K_JOY1 + XE_BTN_Y, "weapnext");
 	
+	// LB RB
+	Key_SetBinding(K_JOY1 + XE_BTN_LB, "+moveleft");
+	Key_SetBinding(K_JOY1 + XE_BTN_RB, "+moveright");	
+	
+	// LT RT
+	Key_SetBinding(K_JOY1 + XE_BTN_LT, "+zoom");
+	Key_SetBinding(K_JOY1 + XE_BTN_RT, "+attack");
+	
 	// START BACK
 	Key_SetBinding(K_JOY1 + XE_BTN_START, "+button2");
-	Key_SetBinding(K_JOY1 + XE_BTN_BACK, "+togglemenu");
+	Key_SetBinding(K_JOY1 + XE_BTN_BACK, "togglemenu");
+	Key_SetBinding(K_JOY1 + XE_BTN_LOGO, "+scores");
 }
 
 static int JoyPressed(int btn) {
@@ -109,7 +118,7 @@ static int JoyPressed(int btn) {
 		}
 		case XE_BTN_RIGHT: {
 			return PRESSED(right);
-		}
+		}		
 		
 		case XE_BTN_A: {
 			return PRESSED(a);
@@ -123,11 +132,28 @@ static int JoyPressed(int btn) {
 		case XE_BTN_Y: {
 			return PRESSED(y);
 		}
+		
 		case XE_BTN_START: {
 			return PRESSED(start);
 		}
 		case XE_BTN_BACK: {
 			return PRESSED(back);
+		}
+		case XE_BTN_LOGO: {
+			return PRESSED(logo);
+		}
+		
+		case XE_BTN_RB: {
+			return PRESSED(rb);
+		}
+		case XE_BTN_LB: {
+			return PRESSED(lb);
+		}
+		case XE_BTN_LT: {
+			return ctrl.lt>200;
+		}
+		case XE_BTN_RT: {
+			return ctrl.rt>200;
 		}
 		default:
 		return 0;
@@ -161,11 +187,28 @@ static int JoyReleased(int btn) {
 		case XE_BTN_Y: {
 			return RELEASED(y);
 		}
+		
 		case XE_BTN_START: {
 			return RELEASED(start);
 		}
 		case XE_BTN_BACK: {
 			return RELEASED(back);
+		}		
+		case XE_BTN_LOGO: {
+			return RELEASED(logo);
+		}
+		
+		case XE_BTN_RB: {
+			return RELEASED(rb);
+		}
+		case XE_BTN_LB: {
+			return RELEASED(lb);
+		}
+		case XE_BTN_LT: {
+			return ctrl.lt<200;
+		}
+		case XE_BTN_RT: {
+			return ctrl.rt<200;
 		}
 		default:
 		return 0;

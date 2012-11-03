@@ -160,8 +160,7 @@ typedef struct {
 	int scissor_h;
 	int scissor_w;
 	int scissor_x;
-	int scissor_y;
-	
+	int scissor_y;	
 	
 	// other
 	int fill_mode_front;

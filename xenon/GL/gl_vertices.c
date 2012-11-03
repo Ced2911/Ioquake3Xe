@@ -87,7 +87,7 @@ enum {
 
 typedef union {
 	struct {
-		unsigned int tmu_env_mode:4;	//	4
+		unsigned short tmu_env_mode;	//	4
 	} states[XE_MAX_TMUS];				// 	2 * 4 > 8
 	
 	unsigned int hash;
@@ -138,12 +138,23 @@ void GL_SelectShaders() {
 	pixel_shader_pipeline_t shader;
 	shader.hash = 0;
 	
+	// Create hash
 	for (i=0; i<XE_MAX_TMUS; i++) {    
-		// set texture
+		// add hash
 		if (xeTmus[i].enabled && xeTmus[i].boundtexture) {
 			switch(xeTmus[i].texture_env_mode) {
 				case GL_REPLACE:
 					shader.states[i].tmu_env_mode = XE_ENV_MODE_REPLACE;
+					break;
+				
+				case GL_BLEND:
+					shader.states[i].tmu_env_mode = XE_ENV_MODE_BLEND;
+					break;
+				case GL_DECAL:
+					shader.states[i].tmu_env_mode = XE_ENV_MODE_DECAL;
+					break;
+				case GL_ADD:
+					shader.states[i].tmu_env_mode = XE_ENV_MODE_ADD;
 					break;
 				default:
 				case GL_MODULATE:
@@ -161,7 +172,7 @@ void GL_SelectShaders() {
 		Xe_SetShader(xe, SHADER_TYPE_PIXEL, pPixelColorShader, 0);
 		return;
 	}
-	
+		
 	// look into cache
 	for (i=0; i<XE_ENV_MAX * XE_MAX_TMUS; i++) {
 		if (cache[i].hash) {
@@ -396,7 +407,7 @@ static int vArray_TMU = 0;
 /** todo **/
 void glClientActiveTexture(GLenum texture)
 {
-	vArray_TMU = 0;
+	vArray_TMU = xeGetTmu(texture);
 }
 
 void glDrawBuffer (GLenum mode)
@@ -489,12 +500,14 @@ void glDrawElements(GLenum mode, GLsizei numIndexes, GLenum type, const GLvoid *
 	unsigned int * indexes = (unsigned int*)indices;
 	void * vertice_ptr = vertexPointer.pointer;
 	void * color_ptr = colorPointer.pointer;
-	void * texcoords_ptr = texCoordPointer[vArray_TMU].pointer;
+	void * texcoords0_ptr = texCoordPointer[0].pointer;
+	void * texcoords1_ptr = texCoordPointer[1].pointer;
 	
 	// vertices
 	for (i = 0 ; i < vertexPointer.count ; i++) {
 		float * v = (float*) vertice_ptr;
-		float * t = (float*) texcoords_ptr;
+		float * t0 = (float*) texcoords0_ptr;
+		float * t1 = (float*) texcoords1_ptr;
 		unsigned char * c = (unsigned char*) color_ptr;
 		color.u32 = COLOR_ARGB(c[3], c[2], c[1], c[0]);
 		//color.u32 = 0xFFFFFFFF;
@@ -504,16 +517,31 @@ void glDrawElements(GLenum mode, GLsizei numIndexes, GLenum type, const GLvoid *
 		*xe_Vertices++ = v[2];
 		*xe_Vertices++ = 1;
 		
-		*xe_Vertices++ = t[0];
-		*xe_Vertices++ = t[1];
+		if (texcoords0_ptr) {
+			*xe_Vertices++ = t0[0];
+			*xe_Vertices++ = t0[1];
+		} else {
+			*xe_Vertices++ = 0;
+			*xe_Vertices++ = 0;
+		}
 		
-		*xe_Vertices++ = t[0];
-		*xe_Vertices++ = t[1];
+		if (texcoords1_ptr) {
+			*xe_Vertices++ = t1[0];
+			*xe_Vertices++ = t1[1];
+		} else {
+			*xe_Vertices++ = 0;
+			*xe_Vertices++ = 0;
+		}
 		
 		*xe_Vertices++ = color.f;		
 		
 		vertice_ptr += vertexPointer.stride;
-		texcoords_ptr += 2 * sizeof(float);
+		if (texcoords0_ptr) {
+			texcoords0_ptr += 2 * sizeof(float);
+		}
+		if (texcoords1_ptr) {
+			texcoords1_ptr += 2 * sizeof(float);
+		}
 		color_ptr += 4 * sizeof(char);
 				
 		xe_NumVerts++;

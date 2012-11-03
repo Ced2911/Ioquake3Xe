@@ -623,11 +623,20 @@ int main( )
 	char * newargv[] = {
 		// "sda0:/ioquake3/q3.elf",
 		"uda:/q3.elf",
+		"+set", "ui_cdkeychecked", "1",
 		//"+set", "game", "baseq2", "+set", "cddir", "uda:/baseq2/"
 		//"+set", "fs_basepath" , "uda:/",
 		//"+set", "cddir", "uda:/baseq2/",
 		//"+set", "cl_maxfps", "400",
-		"+set", "+map", "q3dm1"
+		
+		// quake 3
+		"+set", "+map", "q3tourney4"
+		// bfp3
+		//"+set", "fs_game", "bfpq3",
+		//"+set", "+map", "damystic"
+		// ebfp
+		//"+set", "fs_game", "ebfp",
+		//"+set", "+map", "Goku-House"
 	};
 	int newargc = sizeof (newargv) / sizeof (char *);
 	
