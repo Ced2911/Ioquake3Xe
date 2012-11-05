@@ -104,6 +104,7 @@ xe_matrix_t modelview_matrix;
 
 void XeGlInitializeMatrix(xe_matrix_t *m);
 void XeGlCheckDirtyMatrix(xe_matrix_t *m);
+void XeGlResetDirty();
 
 /***********************************************************************
  * States
@@ -129,19 +130,19 @@ typedef struct {
 	int cull_mode;
 	
 	// stencil
-	int stencil_enable;
-	int stencil_func_b;
-	int stencil_func;
-	int stencil_op_b;
-	int stencil_op_fail;
-	int stencil_op_zfail;
-	int stencil_op;
-	int stencil_ref_b;
-	int stencil_ref;
-	int stencil_mask_b;
-	int stencil_mask;
-	int stencil_write_b;
-	int stencil_write;
+	int stencil_enabled;	// Xe_SetStencilEnable
+	int stencil_func_face;		// Xe_SetStencilFunc
+	int stencil_func;		// Xe_SetStencilFunc
+	int stencil_op_face;		// Xe_SetStencilOp
+	int stencil_op_fail;	// Xe_SetStencilOp
+	int stencil_op_zfail;	// Xe_SetStencilOp
+	int stencil_op;			// Xe_SetStencilOp
+	int stencil_ref_face;		// Xe_SetStencilRef
+	int stencil_ref;		// Xe_SetStencilRef
+	int stencil_mask_face;		// Xe_SetStencilMask
+	int stencil_mask;		// Xe_SetStencilMask
+	int stencil_write_face;	// Xe_SetStencilWriteMask
+	int stencil_write_mask;		// Xe_SetStencilWriteMask
 	
 	// viewport
 	int viewport_x;
@@ -165,6 +166,15 @@ typedef struct {
 	// other
 	int fill_mode_front;
 	int fill_mode_back;
+	
+	// clear
+	unsigned int clear_color;
+	unsigned int clear_depth_value;
+	unsigned int clear_stencil_value;
+	
+	// clip planes
+	float clipplane[6][4];
+	int clipplane_enabled;
 	
 	// Reupload all states
 	int dirty;

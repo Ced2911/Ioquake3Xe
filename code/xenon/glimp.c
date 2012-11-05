@@ -79,6 +79,7 @@ void GLimp_Init( void )
 	glConfig.vidHeight = 480;
 	*/
 	glConfig.isFullscreen = qtrue;
+	
 	/*
 	glConfig.colorBits = 24;
 	glConfig.depthBits = 8;

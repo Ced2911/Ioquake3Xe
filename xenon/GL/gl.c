@@ -112,6 +112,10 @@ static void ShowFPS() {
 // classic way
 void XenonGLDisplay()
 {    	
+	// Reset states and matrices
+	XeGlResetDirty();
+	xe_state.dirty = 1;
+	
 	// Set stream
     Xe_SetStreamSource(xe, 0, pVbGL, 0, 10);
 	
@@ -153,6 +157,10 @@ void XenonBeginGl()
     Xe_SetStreamSource(xe, 0, pVbGL, 0, 10);
     
     // Xe_SetFrameBufferSurface(xe, frontbuffer);
+    
+    // Reset states and matrices
+    XeGlResetDirty();
+    xe_state.dirty = 1;    
 }
 
 void XenonEndGl()

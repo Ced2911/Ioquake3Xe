@@ -220,3 +220,8 @@ void XeGlCheckDirtyMatrix(xe_matrix_t *m){
 	}
 }
 
+void XeGlResetDirty() {
+	modelview_matrix.dirty = 1;
+	projection_matrix.dirty = 1;
+}
+

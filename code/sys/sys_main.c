@@ -630,7 +630,8 @@ int main( )
 		//"+set", "cl_maxfps", "400",
 		
 		// quake 3
-		"+set", "+map", "q3tourney4"
+		//"+set", "+map", "q3tourney4"
+		"+set", "+map", "q3dm0"
 		// bfp3
 		//"+set", "fs_game", "bfpq3",
 		//"+set", "+map", "damystic"

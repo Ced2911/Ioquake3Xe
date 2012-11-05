@@ -1,5 +1,6 @@
 #include "gl_xenos.h"
 #include <debug.h>
+#include <assert.h>
 
 GLenum gl_cull_mode = GL_BACK;
 static GLboolean gl_cull_enable = GL_FALSE;
@@ -49,6 +50,7 @@ void glClear (GLbitfield mask)
 	if (mask & GL_DEPTH_BUFFER_BIT) flags |= XE_CLEAR_DS;
 	if (mask & GL_STENCIL_BUFFER_BIT) flags |= XE_CLEAR_DS;
 
+	Xe_SetClearColor(xe, xe_state.clear_color);
 	Xe_Clear(xe, flags);
 }
 
@@ -57,7 +59,7 @@ void glClear (GLbitfield mask)
 void glClearColor (GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
 	unsigned int c = MAKE_COLOR4((int)(red * 255), (int)(green * 255), (int)(blue * 255), (int)(alpha * 255));
-	Xe_SetClearColor(xe, c);
+	xe_state.clear_color = c;
 }
 
 void glClearDepth(GLclampd depth)
@@ -338,18 +340,32 @@ void GlEnableDisable(GLenum cap, int enable)
 			gl_cull_enable = GL_TRUE;
 		updateCullMode();
 		break;
+		
 	case GL_STENCIL_TEST:
-		xe_state.scissor_enabled = enable;
+		xe_state.stencil_enabled = enable;
 		break;
+		
 	case GL_DEPTH_TEST:
 		xe_state.z_enable = enable;
 		break;
+		
 	case GL_FOG:
 		return;
+		
+	case GL_CLIP_PLANE0:
+	case GL_CLIP_PLANE1:
+	case GL_CLIP_PLANE2:
+	case GL_CLIP_PLANE3:
+	case GL_CLIP_PLANE4:
+	case GL_CLIP_PLANE5:
+		xe_state.clipplane_enabled = enable;
+		break;
+		
 	case GL_POLYGON_OFFSET_FILL:
 	case GL_POLYGON_OFFSET_LINE:
 		xe_state.polygon_offset_enabled = enable;
 		break;
+		
 	default:
 		return;
 	}
@@ -370,19 +386,71 @@ void glDisable(GLenum cap)
 /***********************************************************************
  * Stencil
  ***********************************************************************/
+static int stencil_back_and_front = 3;
+
+
+static int Gl_Stencil_2_Xe(int value) {
+	int ret = XE_STENCILOP_KEEP;
+	switch (value) {
+		case GL_KEEP:
+			ret = XE_STENCILOP_KEEP;
+			break;
+		case GL_ZERO:
+			ret = XE_STENCILOP_ZERO;
+			break;
+		case GL_REPLACE:
+			ret = XE_STENCILOP_REPLACE;
+			break;
+		case GL_INCR:
+			ret = XE_STENCILOP_INCR;
+			break;		
+		case GL_DECR:
+			ret = XE_STENCILOP_DECR;
+			break;		
+		case GL_INVERT:
+			ret = XE_STENCILOP_INVERT;
+			break;
+			/*
+		case GL_INCR_WRAP:
+			ret = XE_STENCILOP_INCRSAT;
+			break;
+		case GL_DECR_WRAP:
+			ret = XE_STENCILOP_DECRSAT;
+			break;
+			*/ 
+		default:
+			break;
+	}
+	return ret;
+}
+ 
 void glStencilFunc(GLenum func,	GLint ref,GLuint mask)
 {
 	xe_state.dirty = 1;
+	
+	xe_state.stencil_op_face = stencil_back_and_front;
+	xe_state.stencil_write_face = stencil_back_and_front;
+	xe_state.stencil_func_face = stencil_back_and_front;
+	xe_state.stencil_ref_face = stencil_back_and_front;
+	
+	xe_state.stencil_func = Gl_Stencil_2_Xe(func);
+	xe_state.stencil_mask = mask;
+	xe_state.stencil_ref = ref;
+	
 }
 
 void glStencilMask(GLuint mask)
 {
 	xe_state.dirty = 1;
+	xe_state.stencil_write_mask = mask;
 }
 
 void glStencilOp(GLenum sfail,	GLenum  dpfail,	GLenum  dppass)
 {
 	xe_state.dirty = 1;
+	xe_state.stencil_op = Gl_Stencil_2_Xe(sfail);
+	xe_state.stencil_op_fail = Gl_Stencil_2_Xe(dpfail);
+	xe_state.stencil_op_zfail = Gl_Stencil_2_Xe(dppass);
 }
 /***********************************************************************
  * Misc
@@ -415,9 +483,11 @@ void glPolygonOffset (GLfloat factor, GLfloat units)
 	xe_state.zoffset = units;
 }
 
-void glClipPlane(GLenum plane,
-                 const GLdouble *equation) {
-					 
+void glClipPlane(GLenum plane, const GLdouble *equation) {
+	int idx = GL_CLIP_PLANE0 - plane;
+	assert(idx>=0 && idx<6);
+	// memcpy(&xe_state.clipplane[idx],equation,4*4);
+	xe_state.dirty = 1;
 }
 
 void glLineWidth(GLfloat width)
@@ -432,7 +502,8 @@ void glCallList(GLuint list)
 
 void glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
-	
+	unsigned int mask = (red?XE_COLOR_MASK_RED:0) | (blue?XE_COLOR_MASK_BLUE:0) | (green?XE_COLOR_MASK_GREEN:0) | (alpha?XE_COLOR_MASK_ALPHA:0);
+	xe->color_mask = mask;
 }
 
 void glReadPixels(GLint x,	GLint y, GLsizei width,	GLsizei height,	GLenum format, GLenum type,
@@ -453,7 +524,6 @@ void glGetDoublev(GLenum pname,	GLdouble * params)
 
 void glGetIntegerv(GLenum pname, GLint * params)
 {
-	TR;
 // here we only bother getting the values that glquake uses
 	switch (pname)
 	{
@@ -509,11 +579,18 @@ void glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	//xe_gl_log("glViewport Not implemented\n");
 	//printf("glViewport : %d - %d - %d - %d\n", x, y, width, height );
+	
 	xe_state.viewport_w = width;
 	xe_state.viewport_h = height;
 	xe_state.viewport_x = x;
 	xe_state.viewport_y = y;
 	
+	/*
+	xe_state.viewport_w = 640;
+	xe_state.viewport_h = 360;
+	xe_state.viewport_x = 360;
+	xe_state.viewport_y = 180;
+	*/
 	//if (xe_state.viewport_x||xe_state.viewport_y)
 	//	printf("glViewport : %d - %d - %d - %d\n", xe_state.viewport_x, xe_state.viewport_y, xe_state.viewport_w, xe_state.viewport_h );
 	
@@ -528,6 +605,7 @@ static float zoffset_bias	= 0.0000152588f;
  * States Management
  ***********************************************************************/
 void XeUpdateStates() {
+	int i = 0;
 	if (xe_state.dirty) {
 		// blending		
 		if (xe_state.blend_enable) {
@@ -554,16 +632,24 @@ void XeUpdateStates() {
 		// Xe_SetScissor(xe, xe_state.scissor_enabled, xe_state.scissor_x, xe_state.scissor_y, xe_state.scissor_x+scissor_w, xe_state.scissor_y+scissor_h);
 #if 1
 		// Stencil
-		Xe_SetStencilEnable(xe, xe_state.stencil_enable);
-		Xe_SetStencilFunc(xe, xe_state.stencil_func_b, xe_state.stencil_func);
+		Xe_SetStencilEnable(xe, xe_state.stencil_enabled);
+		Xe_SetStencilFunc(xe, xe_state.stencil_func_face, xe_state.stencil_func);
 
 		/* -1 to leave old value */
-		Xe_SetStencilOp(xe, xe_state.stencil_op_b, xe_state.stencil_op_fail, xe_state.stencil_op_zfail, xe_state.stencil_op);
+		Xe_SetStencilOp(xe, xe_state.stencil_op_face, xe_state.stencil_op_fail, xe_state.stencil_op_zfail, xe_state.stencil_op);
 
-		Xe_SetStencilRef(xe, xe_state.stencil_ref_b, xe_state.stencil_ref);
-		Xe_SetStencilMask(xe, xe_state.stencil_mask_b, xe_state.stencil_mask);
-		Xe_SetStencilWriteMask(xe, xe_state.stencil_write_b, xe_state.stencil_write);
+		Xe_SetStencilRef(xe, xe_state.stencil_ref_face, xe_state.stencil_ref);
+		Xe_SetStencilMask(xe, xe_state.stencil_mask_face, xe_state.stencil_mask);
+		Xe_SetStencilWriteMask(xe, xe_state.stencil_write_face, xe_state.stencil_write_mask);
 #endif
+
+		// clip planes		
+		for (i=0;i<6;i++) {
+			//Xe_SetClipPlaneEnables(xe, xe_state.clipplane_enabled);
+			if (xe_state.clipplane_enabled) {
+				//Xe_SetClipPlane(xe, i, xe_state.clipplane[i]);
+			}
+		}
 
 		// viewport
 		/** offset doesn't work yet **/
@@ -573,7 +659,8 @@ void XeUpdateStates() {
 			zn += zoffset_bias * xe_state.zoffset;
 			zf += zoffset_bias * xe_state.zoffset;
 		}
-		Xe_SetViewport(xe, 0, 0, xe_state.viewport_w, xe_state.viewport_h, zn, zf);
+		
+		Xe_SetViewport(xe, xe_state.viewport_x, xe_state.viewport_y, xe_state.viewport_w, xe_state.viewport_h, zn, zf);
 
 		// other		
 		//Xe_SetFillMode(xe, xe_state.fill_mode_front, xe_state.fill_mode_back);
@@ -595,6 +682,20 @@ void XeInitStates() {
 	xe_state.alpha_test_enabled = 0;
 	xe_state.alpha_test_func = 0;
 	xe_state.alpha_test_ref = 0;
+	
+	xe_state.stencil_enabled = 0;
+	xe_state.stencil_func_face = 0;	
+	xe_state.stencil_func = 0;		
+	xe_state.stencil_op_face = 0;	
+	xe_state.stencil_op_fail = 0;	
+	xe_state.stencil_op_zfail = 0;	
+	xe_state.stencil_op = 0;		
+	xe_state.stencil_ref_face = 0;	
+	xe_state.stencil_ref = 0;		
+	xe_state.stencil_mask_face = 0;	
+	xe_state.stencil_mask = 0;		
+	xe_state.stencil_write_face = 0;
+	xe_state.stencil_write_mask = 0;
 	
 	xe_state.z_enable = 0;
 	xe_state.z_mask = 0;
